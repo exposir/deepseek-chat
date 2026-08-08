@@ -24,8 +24,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      # --no-audit 规避 npm audit 在 CI 中偶发挂起（Exit handler never called）
-      - run: npm ci --no-audit --no-fund
+      # npm ci 在 runner 上挂死：npm 11 fetch 挂起 bug 家族（npm/cli#6380 #7891 #9386）。
+      # 三层保险：1) IPv4 优先 DNS；2) 升级 npm 12（与本地一致，allowScripts 为其特性）；
+      # 3) 显式 fetch 短超时+重试 + timeout 300 快速失败。
+      - name: Install dependencies
+        env:
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: |
+          npm install -g npm@12.0.2 --no-audit --no-fund --fetch-retries=5 --fetch-timeout=60000
+          timeout 300 npm ci --no-audit --no-fund --fetch-retries=5 --fetch-timeout=60000 --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=30000
       - run: npm test
       - run: npm run build
       - uses: actions/configure-pages@v5
