@@ -1,0 +1,65 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { ReasoningEffort } from '../api/types';
+
+export interface ModelOption {
+  id: string;
+  label: string;
+  enabled: boolean;
+  disabledReason?: string;
+}
+
+/** 模型常量表：pro 待官方 Responses API 支持后改 enabled 即可 */
+export const MODELS: ModelOption[] = [
+  { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', enabled: true },
+  {
+    id: 'deepseek-v4-pro',
+    label: 'DeepSeek V4 Pro',
+    enabled: false,
+    disabledReason: 'Responses API 支持后开放（官方预计 2026 年 8 月初）',
+  },
+];
+
+export const DEFAULT_MODEL = 'deepseek-v4-flash';
+
+interface SettingsState {
+  apiKey: string;
+  model: string;
+  reasoningEffort: ReasoningEffort;
+  searchEnabled: boolean;
+  systemPrompt: string;
+  setApiKey: (key: string) => void;
+  setModel: (model: string) => void;
+  setReasoningEffort: (effort: ReasoningEffort) => void;
+  setSearchEnabled: (enabled: boolean) => void;
+  setSystemPrompt: (prompt: string) => void;
+}
+
+export const useSettings = create<SettingsState>()(
+  persist(
+    (set) => ({
+      apiKey: '',
+      model: DEFAULT_MODEL,
+      reasoningEffort: 'high',
+      searchEnabled: true,
+      systemPrompt: '',
+      setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
+      setModel: (model) => set({ model }),
+      setReasoningEffort: (reasoningEffort) => set({ reasoningEffort }),
+      setSearchEnabled: (searchEnabled) => set({ searchEnabled }),
+      setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
+    }),
+    {
+      name: 'ds-chat-settings',
+      version: 1,
+      // v0 曾使用 medium 档位（非官方档位），迁移为默认 high
+      migrate: (state) => {
+        const s = state as Partial<SettingsState>;
+        if (s.reasoningEffort && !['none', 'low', 'high', 'max'].includes(s.reasoningEffort)) {
+          s.reasoningEffort = 'high';
+        }
+        return s as SettingsState;
+      },
+    },
+  ),
+);

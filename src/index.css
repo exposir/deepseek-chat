@@ -1,0 +1,172 @@
+@import 'tailwindcss';
+@import 'streamdown/styles.css';
+@import 'katex/dist/katex.min.css';
+
+/* Streamdown 的 Tailwind 工具类扫描（路径相对于本文件） */
+@source '../node_modules/streamdown/dist/*.js';
+@source '../node_modules/@streamdown/code/dist/*.js';
+@source '../node_modules/@streamdown/math/dist/*.js';
+@source '../node_modules/@streamdown/cjk/dist/*.js';
+
+@theme {
+  --color-bg: #0f1117;
+  --color-panel: #171a23;
+  --color-panel-2: #1e222e;
+  --color-border: #2a2f3d;
+  --color-accent: #4d6bfe;
+  --color-accent-soft: #2b3a80;
+  --color-text: #e6e8ee;
+  --color-text-dim: #9aa1b2;
+
+  /* Streamdown 依赖的 shadcn 设计令牌（映射到本应用深色系） */
+  --color-background: #0f1117;
+  --color-foreground: #e6e8ee;
+  --color-card: #171a23;
+  --color-card-foreground: #e6e8ee;
+  --color-muted: #1e222e;
+  --color-muted-foreground: #9aa1b2;
+  --color-input: #2a2f3d;
+  --color-primary: #4d6bfe;
+  --color-primary-foreground: #ffffff;
+}
+
+/* shadcn 组件运行时读取的 CSS 变量（深色单主题） */
+:root {
+  --background: #0f1117;
+  --foreground: #e6e8ee;
+  --card: #171a23;
+  --card-foreground: #e6e8ee;
+  --muted: #1e222e;
+  --muted-foreground: #9aa1b2;
+  --border: #2a2f3d;
+  --input: #2a2f3d;
+  --primary: #4d6bfe;
+  --primary-foreground: #ffffff;
+  --radius: 0.625rem;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', Roboto, 'Helvetica Neue',
+    'Noto Sans SC', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* 动态视口 + iOS 安全区 */
+.app-shell {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  display: flex;
+  flex-direction: column;
+}
+
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+/* Markdown 正文排版（代码块/表格交由 Streamdown 自带样式） */
+.md-body {
+  line-height: 1.7;
+  word-break: break-word;
+}
+.md-body > *:first-child {
+  margin-top: 0;
+}
+.md-body > *:last-child {
+  margin-bottom: 0;
+}
+.md-body p {
+  margin: 0.5em 0;
+}
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+  margin: 0.9em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.md-body h1 {
+  font-size: 1.25em;
+}
+.md-body h2 {
+  font-size: 1.15em;
+}
+.md-body h3 {
+  font-size: 1.05em;
+}
+.md-body ul,
+.md-body ol {
+  padding-left: 1.4em;
+  margin: 0.5em 0;
+}
+.md-body ul {
+  list-style: disc;
+}
+.md-body ol {
+  list-style: decimal;
+}
+.md-body li {
+  margin: 0.2em 0;
+}
+.md-body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.md-body blockquote {
+  border-left: 3px solid var(--color-border);
+  margin: 0.6em 0;
+  padding-left: 0.8em;
+  color: var(--color-text-dim);
+}
+.md-body hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1em 0;
+}
+
+/* 思维链区块的浅色小字 */
+.reasoning-text {
+  color: var(--color-text-dim);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 流式光标 */
+.stream-cursor::after {
+  content: '▍';
+  color: var(--color-accent);
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 搜索徽标呼吸动画 */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.search-pulse {
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
