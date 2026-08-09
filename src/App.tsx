@@ -51,7 +51,7 @@ export default function App() {
         </button>
         <div className="flex-1 min-w-0 text-center">
           <div className="text-sm font-medium truncate">{activeTitle}</div>
-          <div className="text-[10px] text-text-dim">{model}</div>
+          <div className="text-[11px] text-text-dim">{model}</div>
         </div>
         <button
           type="button"

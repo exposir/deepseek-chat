@@ -78,7 +78,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
             }}
             rows={1}
             placeholder="输入消息…"
-            className="flex-1 resize-none rounded-2xl border border-border bg-panel-2 px-4 py-2.5 text-[15px] outline-none placeholder:text-text-dim/60 focus:border-accent/60"
+            className="flex-1 resize-none rounded-2xl border border-border bg-panel-2 px-4 py-2.5 text-[16px] outline-none placeholder:text-text-dim/60 focus:border-accent/60"
           />
           {isStreaming ? (
             <button

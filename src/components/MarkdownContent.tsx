@@ -22,7 +22,7 @@ export const MarkdownContent = memo(function MarkdownContent({
   streaming?: boolean;
 }) {
   return (
-    <div className="md-body text-[15px]">
+    <div className="md-body text-[16px]">
       <Streamdown
         plugins={PLUGINS}
         parseIncompleteMarkdown={streaming}

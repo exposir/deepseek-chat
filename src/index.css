@@ -139,7 +139,7 @@ body {
 /* 思维链区块的浅色小字 */
 .reasoning-text {
   color: var(--color-text-dim);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;

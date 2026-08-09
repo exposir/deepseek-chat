@@ -93,7 +93,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
                   <div>
                     <div className="text-sm">{m.label}</div>
                     {!m.enabled && m.disabledReason && (
-                      <div className="text-[11px] text-text-dim mt-0.5">{m.disabledReason}</div>
+                      <div className="text-[12px] text-text-dim mt-0.5">{m.disabledReason}</div>
                     )}
                   </div>
                   {settings.model === m.id && (
@@ -128,7 +128,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
                   }`}
                 >
                   <div className="text-sm">{e.label}</div>
-                  <div className="text-[11px] text-text-dim mt-0.5">{e.hint}</div>
+                  <div className="text-[12px] text-text-dim mt-0.5">{e.hint}</div>
                 </button>
               ))}
             </div>

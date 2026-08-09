@@ -56,7 +56,7 @@ export function EffortPicker() {
               >
                 <span>
                   <span className="text-xs font-medium">{e.label}</span>
-                  <span className="block text-[10px] text-text-dim">{e.hint}</span>
+                  <span className="block text-[11px] text-text-dim">{e.hint}</span>
                 </span>
                 {effort === e.value && (
                   <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">

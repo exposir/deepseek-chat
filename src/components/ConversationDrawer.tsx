@@ -47,7 +47,7 @@ export function ConversationDrawer() {
             >
               <div className="flex-1 min-w-0">
                 <div className="text-sm truncate">{c.title}</div>
-                <div className="text-[11px] text-text-dim mt-0.5">{formatTime(c.updatedAt)}</div>
+                <div className="text-[12px] text-text-dim mt-0.5">{formatTime(c.updatedAt)}</div>
               </div>
               <button
                 type="button"
