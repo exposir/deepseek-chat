@@ -1,7 +1,7 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useState } from 'react';
 
 /**
- * 思维链折叠块：流式时默认展开，完成后自动收起（用户手动操作后不再自动干预）
+ * 思维链折叠块：默认折叠，点击头部手动展开/收起；思考中仅展示标题状态
  */
 export const ReasoningBlock = memo(function ReasoningBlock({
   text,
@@ -10,12 +10,7 @@ export const ReasoningBlock = memo(function ReasoningBlock({
   text: string;
   streaming: boolean;
 }) {
-  const [open, setOpen] = useState(streaming);
-  const [touched, setTouched] = useState(false);
-
-  useEffect(() => {
-    if (!touched) setOpen(streaming);
-  }, [streaming, touched]);
+  const [open, setOpen] = useState(false);
 
   if (!text) return null;
 
@@ -23,10 +18,7 @@ export const ReasoningBlock = memo(function ReasoningBlock({
     <div className="rounded-xl border border-border bg-panel/60 overflow-hidden">
       <button
         type="button"
-        onClick={() => {
-          setTouched(true);
-          setOpen((v) => !v);
-        }}
+        onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-text-dim"
       >
         <span className={streaming ? 'search-pulse' : ''}>
