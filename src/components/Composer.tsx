@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useChat } from '../store/chat';
 import { useSettings } from '../store/settings';
+import { EffortPicker } from './EffortPicker';
 
 export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [text, setText] = useState('');
@@ -35,7 +36,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   return (
     <div className="safe-bottom border-t border-border bg-panel px-3 pt-2">
       <div className="mx-auto max-w-2xl">
-        <div className="flex items-center gap-2 pb-1.5">
+        <div className="flex items-center justify-between gap-2 pb-1.5">
           <button
             type="button"
             onClick={() => setSearchEnabled(!searchEnabled)}
@@ -55,6 +56,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
             </svg>
             联网搜索{searchEnabled ? '已开' : '已关'}
           </button>
+          <EffortPicker />
         </div>
         <div className="flex items-end gap-2 pb-2">
           <textarea

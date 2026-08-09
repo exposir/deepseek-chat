@@ -1,13 +1,6 @@
 import { useState } from 'react';
 import { MODELS, useSettings } from '../store/settings';
-import type { ReasoningEffort } from '../api/types';
-
-const EFFORTS: { value: ReasoningEffort; label: string; hint: string }[] = [
-  { value: 'none', label: 'none', hint: '不思考，最快' },
-  { value: 'low', label: 'low', hint: '响应快' },
-  { value: 'high', label: 'high', hint: '默认，均衡' },
-  { value: 'max', label: 'max', hint: '最深入，耗时长' },
-];
+import { EFFORTS } from './EffortPicker';
 
 export function SettingsPage({ onClose }: { onClose: () => void }) {
   const settings = useSettings();
