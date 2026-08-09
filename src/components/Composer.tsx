@@ -36,7 +36,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   return (
     <div className="safe-bottom border-t border-border bg-panel px-3 pt-2">
       <div className="mx-auto max-w-2xl">
-        <div className="flex items-center justify-between gap-2 pb-1.5">
+        <div className="flex items-center gap-2 pb-1.5">
           <button
             type="button"
             onClick={() => setSearchEnabled(!searchEnabled)}
