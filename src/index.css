@@ -9,40 +9,38 @@
 @source '../node_modules/@streamdown/cjk/dist/*.js';
 
 @theme {
-  /* X 式暗色：纯黑 OLED 底 + 克制灰阶 + 单一品牌蓝 */
-  --color-bg: #000000;
-  --color-panel: #16181c;
-  --color-panel-2: #1e2024;
-  --color-border: #2f3336;
-  --color-accent: #1d9bf0;
-  --color-accent-soft: #0f2c4f;
-  --color-text: #e7e9ea;
-  --color-text-dim: #71767b;
-  --color-danger: #f4212e;
+  --color-bg: #0f1117;
+  --color-panel: #171a23;
+  --color-panel-2: #1e222e;
+  --color-border: #2a2f3d;
+  --color-accent: #4d6bfe;
+  --color-accent-soft: #2b3a80;
+  --color-text: #e6e8ee;
+  --color-text-dim: #9aa1b2;
 
-  /* Streamdown 依赖的 shadcn 设计令牌（映射到 X 暗色系） */
-  --color-background: #000000;
-  --color-foreground: #e7e9ea;
-  --color-card: #16181c;
-  --color-card-foreground: #e7e9ea;
-  --color-muted: #16181c;
-  --color-muted-foreground: #71767b;
-  --color-input: #2f3336;
-  --color-primary: #1d9bf0;
+  /* Streamdown 依赖的 shadcn 设计令牌（映射到本应用深色系） */
+  --color-background: #0f1117;
+  --color-foreground: #e6e8ee;
+  --color-card: #171a23;
+  --color-card-foreground: #e6e8ee;
+  --color-muted: #1e222e;
+  --color-muted-foreground: #9aa1b2;
+  --color-input: #2a2f3d;
+  --color-primary: #4d6bfe;
   --color-primary-foreground: #ffffff;
 }
 
 /* shadcn 组件运行时读取的 CSS 变量（深色单主题） */
 :root {
-  --background: #000000;
-  --foreground: #e7e9ea;
-  --card: #16181c;
-  --card-foreground: #e7e9ea;
-  --muted: #16181c;
-  --muted-foreground: #71767b;
-  --border: #2f3336;
-  --input: #2f3336;
-  --primary: #1d9bf0;
+  --background: #0f1117;
+  --foreground: #e6e8ee;
+  --card: #171a23;
+  --card-foreground: #e6e8ee;
+  --muted: #1e222e;
+  --muted-foreground: #9aa1b2;
+  --border: #2a2f3d;
+  --input: #2a2f3d;
+  --primary: #4d6bfe;
   --primary-foreground: #ffffff;
   --radius: 0.625rem;
 }
@@ -136,18 +134,6 @@ body {
   border: none;
   border-top: 1px solid var(--color-border);
   margin: 1em 0;
-}
-
-/* 代码块：融入面板的 X 式卡片（Shiki token 色保持主题自带） */
-.md-body pre {
-  background: var(--color-panel);
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-}
-.md-body :not(pre) > code {
-  background: var(--color-panel-2);
-  border-radius: 0.25rem;
-  padding: 0.1em 0.35em;
 }
 
 /* 思维链区块的浅色小字 */

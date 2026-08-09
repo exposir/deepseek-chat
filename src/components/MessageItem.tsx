@@ -41,7 +41,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
           </div>
         )}
         {meta?.interrupted && <div className="text-[11px] text-text-dim/70">已手动停止</div>}
-        {meta?.error && <div className="text-[11px] text-danger">{meta.error}</div>}
+        {meta?.error && <div className="text-[11px] text-red-400">{meta.error}</div>}
       </div>
     );
   }

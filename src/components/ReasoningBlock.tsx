@@ -27,7 +27,7 @@ export const ReasoningBlock = memo(function ReasoningBlock({
           setTouched(true);
           setOpen((v) => !v);
         }}
-        className={`w-full flex items-center gap-1.5 px-3 py-2 text-xs ${streaming ? 'text-accent' : 'text-text-dim'} hover:bg-panel-2 transition-colors`}
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-text-dim"
       >
         <span className={streaming ? 'search-pulse' : ''}>
           {streaming ? '深度思考中…' : '已深度思考'}
