@@ -55,7 +55,7 @@ export function ConversationDrawer() {
                   e.stopPropagation();
                   if (window.confirm('删除该会话？')) void removeConversation(c.id);
                 }}
-                className="shrink-0 p-1.5 rounded-lg text-text-dim/60 active:text-red-400"
+                className="shrink-0 p-1.5 rounded-lg text-text-dim/60 active:text-danger"
                 aria-label="删除会话"
               >
                 <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
