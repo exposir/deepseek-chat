@@ -56,8 +56,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          markdown: ['streamdown', '@streamdown/code', '@streamdown/math', '@streamdown/cjk'],
+        manualChunks(id) {
+          if (id.includes('streamdown')) return 'markdown';
         },
       },
     },
