@@ -106,7 +106,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
       return (
         <div className="space-y-0.5 msg-in">
           <div className="flex justify-end">
-            <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-br-md bg-accent-soft/70 px-4 py-2.5 md:py-3 text-[16px] whitespace-pre-wrap break-words">
+            <div className="max-w-[85%] md:max-w-[60%] rounded-2xl rounded-br-md bg-accent-soft/70 px-4 py-2.5 md:py-3 text-[16px] whitespace-pre-wrap break-words">
               {text}
             </div>
           </div>

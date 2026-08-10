@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat, type StreamBlock } from '../store/chat';
+import { useSettings } from '../store/settings';
 import { MessageItemView } from './MessageItem';
 import { MarkdownContent } from './MarkdownContent';
 import { ReasoningBlock } from './ReasoningBlock';
 import { SearchCallBadge } from './SearchCallBadge';
+
+/** 空会话建议问题：点击直接发送 */
+const SUGGESTIONS = [
+  { icon: '🌐', text: '今天有哪些值得关注的新闻？' },
+  { icon: '🧠', text: '头脑风暴：给一个开源项目起 10 个名字' },
+  { icon: '💻', text: '用 Python 写一个两行快速排序' },
+  { icon: '📝', text: '翻译一段英文技术文档到中文' },
+];
 
 function StreamBlockView({ block, isLast }: { block: StreamBlock; isLast: boolean }) {
   if (block.type === 'reasoning') {
@@ -67,17 +76,35 @@ export function MessageList() {
   };
 
   const empty = items.length === 0 && streamBlocks.length === 0;
+  const apiKey = useSettings((s) => s.apiKey);
+  const send = useChat((s) => s.send);
 
   return (
     <div className="relative flex-1 min-h-0">
       <div ref={containerRef} className="h-full overflow-y-auto px-4 pt-[var(--header-h)] pb-[150px]">
         {empty ? (
-          <div className="h-full flex flex-col items-center justify-center gap-2 text-text-dim">
+          <div className="h-full flex flex-col items-center gap-4 text-text-dim px-4 pt-[16vh] md:pt-[14vh]">
             <div className="text-2xl md:text-4xl">👋</div>
             <div className="text-sm md:text-base">开始提问吧，支持思维链与联网搜索</div>
+            {apiKey && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full max-w-2xl md:max-w-5xl mt-2">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s.text}
+                    type="button"
+                    disabled={isStreaming}
+                    onClick={() => void send(s.text)}
+                    className="flex items-start gap-3 md:gap-4 rounded-2xl border border-border bg-panel p-4 md:p-5 text-left hover:bg-panel-2/70 disabled:opacity-50 transition-colors"
+                  >
+                    <span className="text-xl md:text-2xl leading-none mt-0.5">{s.icon}</span>
+                    <span className="text-sm md:text-[15px] text-text leading-relaxed">{s.text}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
-          <div className="mx-auto max-w-2xl md:max-w-5xl space-y-4 md:space-y-6 pb-2">
+          <div className="mx-auto max-w-2xl md:max-w-6xl space-y-4 md:space-y-6 pb-2">
             {items.map((r) => (
               <MessageItemView key={`${r.convId}-${r.seq}`} record={r} />
             ))}

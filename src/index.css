@@ -102,6 +102,12 @@ body {
   line-height: 1.7;
   word-break: break-word;
 }
+/* 桌面端行距更紧凑 */
+@media (min-width: 768px) {
+  .md-body {
+    line-height: 1.6;
+  }
+}
 .md-body > *:first-child {
   margin-top: 0;
 }

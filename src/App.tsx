@@ -60,7 +60,7 @@ export default function App() {
             />
           </svg>
         </button>
-        <div className="flex-1 min-w-0 text-center">
+        <div className="flex-1 min-w-0 text-center md:text-left md:pl-4">
           <div className="text-sm md:text-base font-medium truncate">{activeTitle}</div>
           <div className="text-[11px] text-text-dim">{model}</div>
         </div>
