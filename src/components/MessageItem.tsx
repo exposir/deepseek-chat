@@ -58,6 +58,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
         <SearchCallBadge
           status={item.status}
           query={(item.action as { query?: string } | undefined)?.query}
+          streaming={false}
         />
       </div>
     );

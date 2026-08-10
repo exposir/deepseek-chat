@@ -12,7 +12,7 @@ function StreamBlockView({ block, isLast }: { block: StreamBlock; isLast: boolea
   if (block.type === 'web_search_call') {
     return (
       <div>
-        <SearchCallBadge status={block.searchStatus} query={block.query} />
+        <SearchCallBadge status={block.searchStatus} query={block.query} streaming={!block.finalItem} />
       </div>
     );
   }
