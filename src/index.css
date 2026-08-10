@@ -59,6 +59,16 @@
     --color-text: #191d24;
     --color-text-dim: #5f6a7c;
 
+    --color-background: #f4f5f8;
+    --color-foreground: #191d24;
+    --color-card: #ffffff;
+    --color-card-foreground: #191d24;
+    --color-muted: #eef0f4;
+    --color-muted-foreground: #5f6a7c;
+    --color-input: #dde1e8;
+    --color-primary: #3b5bdb;
+    --color-primary-foreground: #ffffff;
+
     --background: #f4f5f8;
     --foreground: #191d24;
     --card: #ffffff;
