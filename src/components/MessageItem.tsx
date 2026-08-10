@@ -59,6 +59,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
           status={item.status}
           query={(item.action as { query?: string } | undefined)?.query}
           streaming={false}
+          searchResult={item.action as Record<string, unknown> | undefined}
         />
       </div>
     );

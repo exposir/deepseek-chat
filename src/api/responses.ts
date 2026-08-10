@@ -24,6 +24,7 @@ export interface StreamCallbacks {
   onWebSearchStatus?: (
     status: 'in_progress' | 'searching' | 'completed',
     itemId?: string,
+    item?: WebSearchCallItem,
   ) => void;
   onCompleted?: (response: ResponseObject, usage?: Usage) => void;
   onIncomplete?: (response: ResponseObject) => void;
@@ -71,7 +72,7 @@ export function dispatchStreamEvent(ev: StreamEvent, cb: StreamCallbacks): void 
       cb.onWebSearchStatus?.('searching', ev.item_id);
       break;
     case 'response.web_search_call.completed':
-      cb.onWebSearchStatus?.('completed', ev.item_id);
+      cb.onWebSearchStatus?.('completed', ev.item_id, ev.item as WebSearchCallItem | undefined);
       break;
     case 'response.completed':
       if (ev.response) cb.onCompleted?.(ev.response, ev.response.usage);

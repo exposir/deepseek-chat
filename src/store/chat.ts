@@ -28,6 +28,7 @@ export interface StreamBlock {
   text: string;
   searchStatus?: 'in_progress' | 'searching' | 'completed';
   query?: string;
+  searchResult?: Record<string, unknown>;
   finalItem?: ResponseItem;
 }
 
@@ -243,6 +244,10 @@ export const useChat = create<ChatState>()((set, get) => ({
                       item.type === 'web_search_call'
                         ? ((item.action as { query?: string } | undefined)?.query ?? b.query)
                         : b.query,
+                    searchResult:
+                      item.type === 'web_search_call'
+                        ? ((item.action as Record<string, unknown> | undefined) ?? b.searchResult)
+                        : b.searchResult,
                   };
                 }
                 return b;
@@ -261,12 +266,12 @@ export const useChat = create<ChatState>()((set, get) => ({
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
             scheduleFlush(set);
           },
-          onWebSearchStatus: (status, itemId) => {
+          onWebSearchStatus: (status, itemId, item) => {
             set((s) => ({
               streamBlocks: s.streamBlocks.map((b) =>
                 (itemId && b.itemId === itemId) ||
                 (!itemId && b.type === 'web_search_call' && b.searchStatus !== 'completed')
-                  ? { ...b, searchStatus: status }
+                  ? { ...b, searchStatus: status, searchResult: (item?.action as Record<string, unknown> | undefined) ?? b.searchResult }
                   : b,
               ),
             }));
@@ -312,7 +317,7 @@ export const useChat = create<ChatState>()((set, get) => ({
         item = { type: 'message', role: 'assistant', id: b.itemId, content: b.text };
       } else {
         // 未完成的 web_search_call：落库保留展示，回传时由 buildInputItems 过滤
-        item = { type: 'web_search_call', id: b.itemId, status: b.searchStatus ?? 'in_progress' };
+        item = { type: 'web_search_call', id: b.itemId, status: b.searchStatus ?? 'in_progress', action: b.searchResult };
       }
       const isLast = i === blocks.length - 1;
       const record: ItemRecord = {

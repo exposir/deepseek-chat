@@ -8,12 +8,31 @@ export const SearchCallBadge = memo(function SearchCallBadge({
   status,
   query,
   streaming,
+  searchResult,
 }: {
   status?: string;
   query?: string;
   streaming?: boolean;
+  searchResult?: Record<string, unknown>;
 }) {
     void streaming; // 保留接口一致性，暂未使用
+  const renderSources = (sr: Record<string, unknown>) => {
+    const sources = sr.sources as Array<{title?: string; url?: string; snippet?: string}> | undefined;
+    if (!sources?.length) return null;
+    return (
+      <div className="space-y-1.5">
+        <div className="text-[11px] text-text-dim/60">搜索来源</div>
+        {sources.map((src, i) => (
+          <a key={i} href={src.url ?? '#'} target="_blank" rel="noreferrer noopener"
+            className="block rounded-lg border border-border/60 bg-panel-2 p-2.5 text-xs">
+            {src.title && <div className="font-medium text-accent mb-0.5">{src.title}</div>}
+            {src.url && <div className="text-[11px] text-text-dim/60 truncate mb-0.5">{src.url}</div>}
+            {src.snippet && <div className="text-text-dim line-clamp-2">{src.snippet}</div>}
+          </a>
+        ))}
+      </div>
+    );
+  };
   const [open, setOpen] = useState(false);
   const active = status === 'in_progress' || status === 'searching';
 
@@ -52,6 +71,7 @@ export const SearchCallBadge = memo(function SearchCallBadge({
               <span className="text-text-dim/60">搜索词：</span>{query}
             </div>
           )}
+          {searchResult && renderSources(searchResult)}
           <div className="text-xs text-text-dim/70">
             状态：{status === 'completed' ? '已完成' : status === 'searching' ? '搜索中' : status === 'in_progress' ? '准备…' : (status ?? '未知')}
           </div>
