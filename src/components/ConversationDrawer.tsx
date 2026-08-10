@@ -40,7 +40,7 @@ export function ConversationDrawer() {
           }`}
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="px-4 py-3 flex items-center justify-between border-b border-border">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <span className="font-semibold">会话</span>
           <button
             type="button"
