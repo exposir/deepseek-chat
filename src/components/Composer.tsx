@@ -75,7 +75,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
 
   return (
     <div className="safe-bottom absolute bottom-0 inset-x-0 z-20 border-t border-border bg-panel/60 backdrop-blur-xl px-3 pt-2">
-      <div className="mx-auto max-w-2xl md:max-w-6xl">
+      <div className="mx-auto max-w-2xl md:max-w-5xl">
         <div className="flex items-center gap-2 pb-1.5">
           <button
             type="button"

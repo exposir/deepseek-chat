@@ -112,6 +112,11 @@ body {
   line-height: 1.7;
   word-break: break-word;
 }
+/* break-word 不能传染给代码块和表格，否则代码行/表格内容在窄窗口被强制折断 */
+.md-body pre,
+.md-body table {
+  word-break: normal;
+}
 /* 桌面端行距更紧凑 */
 @media (min-width: 768px) {
   .md-body {

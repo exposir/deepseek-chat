@@ -104,7 +104,7 @@ export function MessageList() {
             )}
           </div>
         ) : (
-          <div className="mx-auto max-w-2xl md:max-w-6xl space-y-4 md:space-y-6 pb-2">
+          <div className="mx-auto max-w-2xl md:max-w-5xl space-y-4 md:space-y-6 pb-2">
             {items.map((r) => (
               <MessageItemView key={`${r.convId}-${r.seq}`} record={r} />
             ))}
