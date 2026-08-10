@@ -26,12 +26,27 @@ export interface ReasoningItem {
   summary?: unknown[];
 }
 
+/**
+ * web_search_call 的 action 载荷（DeepSeek 实测返回）：
+ * - search 类型携带搜索词数组 queries（非单数 query）
+ * - open_page 类型携带打开的页面 url
+ * - sources 需 OpenAI 侧 include 才返回，DeepSeek 不支持 include，仅作防御保留
+ */
+export interface WebSearchAction {
+  type?: 'search' | 'open_page' | string;
+  query?: string;
+  queries?: string[];
+  url?: string;
+  sources?: Array<{ title?: string; url?: string; snippet?: string }>;
+  [k: string]: unknown;
+}
+
 /** 服务端联网搜索 item（原样回传，服务端自动恢复搜索结果） */
 export interface WebSearchCallItem {
   type: 'web_search_call';
   id?: string;
   status?: 'in_progress' | 'searching' | 'completed' | string;
-  action?: { type?: string; query?: string; [k: string]: unknown };
+  action?: WebSearchAction;
   [k: string]: unknown;
 }
 

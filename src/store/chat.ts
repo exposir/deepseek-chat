@@ -27,8 +27,8 @@ export interface StreamBlock {
   type: 'reasoning' | 'message' | 'web_search_call';
   text: string;
   searchStatus?: 'in_progress' | 'searching' | 'completed';
-  query?: string;
-  searchResult?: Record<string, unknown>;
+  /** web_search_call 的 action 载荷（queries / url 等） */
+  action?: Record<string, unknown>;
   finalItem?: ResponseItem;
 }
 
@@ -225,9 +225,9 @@ export const useChat = create<ChatState>()((set, get) => ({
               type: item.type,
               text: '',
               searchStatus: item.type === 'web_search_call' ? 'in_progress' : undefined,
-              query:
+              action:
                 item.type === 'web_search_call'
-                  ? (item.action as { query?: string } | undefined)?.query
+                  ? (item.action as Record<string, unknown> | undefined)
                   : undefined,
             };
             set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
@@ -240,14 +240,10 @@ export const useChat = create<ChatState>()((set, get) => ({
                   return {
                     ...b,
                     finalItem: item,
-                    query:
+                    action:
                       item.type === 'web_search_call'
-                        ? ((item.action as { query?: string } | undefined)?.query ?? b.query)
-                        : b.query,
-                    searchResult:
-                      item.type === 'web_search_call'
-                        ? ((item.action as Record<string, unknown> | undefined) ?? b.searchResult)
-                        : b.searchResult,
+                        ? ((item.action as Record<string, unknown> | undefined) ?? b.action)
+                        : b.action,
                   };
                 }
                 return b;
@@ -271,7 +267,11 @@ export const useChat = create<ChatState>()((set, get) => ({
               streamBlocks: s.streamBlocks.map((b) =>
                 (itemId && b.itemId === itemId) ||
                 (!itemId && b.type === 'web_search_call' && b.searchStatus !== 'completed')
-                  ? { ...b, searchStatus: status, searchResult: (item?.action as Record<string, unknown> | undefined) ?? b.searchResult }
+                  ? {
+                      ...b,
+                      searchStatus: status,
+                      action: (item?.action as Record<string, unknown> | undefined) ?? b.action,
+                    }
                   : b,
               ),
             }));
@@ -317,7 +317,7 @@ export const useChat = create<ChatState>()((set, get) => ({
         item = { type: 'message', role: 'assistant', id: b.itemId, content: b.text };
       } else {
         // 未完成的 web_search_call：落库保留展示，回传时由 buildInputItems 过滤
-        item = { type: 'web_search_call', id: b.itemId, status: b.searchStatus ?? 'in_progress', action: b.searchResult };
+        item = { type: 'web_search_call', id: b.itemId, status: b.searchStatus ?? 'in_progress', action: b.action };
       }
       const isLast = i === blocks.length - 1;
       const record: ItemRecord = {
