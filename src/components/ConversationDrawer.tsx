@@ -1,5 +1,12 @@
+import { useRef, useState } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useChat } from '../store/chat';
 import { formatTime } from '../utils/format';
+
+const SIDEBAR_MIN = 240;
+const SIDEBAR_MAX = 480;
+const SIDEBAR_DEFAULT = 320;
+const SIDEBAR_STORAGE_KEY = 'ds-sidebar-w';
 
 /** 按天数差分组：今天 / 昨天 / 本周 / 更早 */
 function dayGroup(ts: number): string {
@@ -22,6 +29,37 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
   const newConversation = useChat((s) => s.newConversation);
   const removeConversation = useChat((s) => s.removeConversation);
 
+  // 桌面侧栏宽度：可拖拽调整，持久化到 localStorage
+  const [width, setWidth] = useState(() => {
+    const saved = Number(localStorage.getItem(SIDEBAR_STORAGE_KEY));
+    return saved >= SIDEBAR_MIN && saved <= SIDEBAR_MAX ? saved : SIDEBAR_DEFAULT;
+  });
+  const widthRef = useRef(width);
+  const updateWidth = (w: number) => {
+    widthRef.current = w;
+    setWidth(w);
+  };
+
+  const startDrag = (e: ReactMouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = widthRef.current;
+    const onMove = (ev: MouseEvent) => {
+      updateWidth(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startW + (ev.clientX - startX))));
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(widthRef.current));
+    };
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
   return (
     <>
       {/* 遮罩（仅移动端） */}
@@ -31,15 +69,21 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
         }`}
         onClick={() => setOpen(false)}
       />
-      {/* 抽屉面板：移动端 overlay 滑入；md+ 静态 sidebar 常驻布局 */}
+      {/* 抽屉面板：移动端 overlay 滑入；md+ 静态 sidebar 常驻布局，宽度可拖拽 */}
       <aside
-        className={`flex flex-col bg-panel border-r border-border w-72 md:w-80 max-w-[80vw]
+        className={`flex flex-col bg-panel border-r border-border w-72 md:w-[var(--sidebar-w)] max-w-[80vw]
           fixed inset-y-0 left-0 z-40 transition-transform duration-200
-          md:static md:z-0 md:transition-none md:translate-x-0 ${
+          md:static md:relative md:z-0 md:transition-none md:translate-x-0 ${
             open ? 'translate-x-0' : '-translate-x-full md:hidden'
           }`}
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ '--sidebar-w': `${width}px`, paddingTop: 'env(safe-area-inset-top)' } as CSSProperties}
       >
+        {/* 桌面拖拽手柄 */}
+        <div
+          className="hidden md:block absolute right-0 inset-y-0 w-1.5 cursor-col-resize z-10 hover:bg-accent/20 active:bg-accent/30 transition-colors"
+          onMouseDown={startDrag}
+          aria-hidden="true"
+        />
         <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <span className="font-semibold">会话</span>
           <button
