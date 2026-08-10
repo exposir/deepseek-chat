@@ -80,7 +80,7 @@ export function MessageList() {
   const send = useChat((s) => s.send);
 
   return (
-    <div className="relative flex-1 min-h-0">
+    <div className="relative flex-1 min-h-0 view-chat-content">
       <div ref={containerRef} className="h-full overflow-y-auto px-4 pt-[calc(var(--header-h)+20px)] pb-[150px]">
         {empty ? (
           <div className="h-full flex flex-col items-center gap-4 text-text-dim px-4 pt-[16vh] md:pt-[14vh]">

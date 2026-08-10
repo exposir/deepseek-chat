@@ -20,7 +20,17 @@ export default function App() {
   const theme = useSettings((s) => s.theme);
   const model = useSettings((s) => s.model);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsLeaving, setSettingsLeaving] = useState(false);
   const [keyNotice, setKeyNotice] = useState(false);
+
+  // 关闭设置：先播退出动画再卸载
+  const closeSettings = () => {
+    setSettingsLeaving(true);
+    setTimeout(() => {
+      setSettingsLeaving(false);
+      setShowSettings(false);
+    }, 200);
+  };
 
   useEffect(() => {
     void init();
@@ -66,8 +76,7 @@ export default function App() {
 
   return (
     <div className="app-shell relative flex flex-col md:flex-row">
-      <ConversationDrawer onOpenSettings={() => setShowSettings(true)} />
-      <div className="relative flex-1 min-w-0 flex flex-col">
+      <ConversationDrawer onOpenSettings={() => setShowSettings(true)} />      <div className="relative flex-1 min-w-0 flex flex-col">
       <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 h-14 border-b border-border bg-panel/80 backdrop-blur-2xl">
         <button
           type="button"
@@ -141,7 +150,7 @@ export default function App() {
       <Composer onNeedKey={() => setShowSettings(true)} />
       </div>
 
-      {showSettings && <SettingsPage onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsPage onClose={closeSettings} leaving={settingsLeaving} />}
     </div>
   );
 }

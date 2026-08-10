@@ -156,13 +156,20 @@ export const useChat = create<ChatState>()((set, get) => ({
   selectConversation: async (id) => {
     const items = await listItems(id);
     // 桌面 sidebar 常驻，切会话不关闭；移动端关闭抽屉
-    set({
-      activeConvId: id,
-      items,
-      streamBlocks: [],
-      error: null,
-      drawerOpen: isDesktopViewport() ? get().drawerOpen : false,
-    });
+    const apply = () =>
+      set({
+        activeConvId: id,
+        items,
+        streamBlocks: [],
+        error: null,
+        drawerOpen: isDesktopViewport() ? get().drawerOpen : false,
+      });
+    // View Transitions：消息区交叉过渡（不支持时直接切换）
+    if (typeof document !== 'undefined' && document.startViewTransition) {
+      document.startViewTransition(apply);
+    } else {
+      apply();
+    }
   },
 
   newConversation: async () => {
@@ -202,6 +209,12 @@ export const useChat = create<ChatState>()((set, get) => ({
     const history = get().items.map((r) => r.item);
     const input = buildInputItems(history, trimmed);
 
+    // 默认指令：与系统提示词合并，每次发送自动带上
+    const defaultTpl = settings.promptTemplates.find((t) => t.id === settings.defaultTemplateId);
+    const systemPrompt = [settings.systemPrompt, defaultTpl?.text]
+      .filter((s) => s?.trim())
+      .join('\n\n');
+
     // 用户消息立即落库并上屏
     const userItem: MessageItem = { type: 'message', role: 'user', content: trimmed };
     const userRecord: ItemRecord = { convId, seq: await nextSeq(convId), item: userItem };
@@ -230,7 +243,7 @@ export const useChat = create<ChatState>()((set, get) => ({
           apiKey: settings.apiKey,
           model: settings.model,
           input,
-          systemPrompt: settings.systemPrompt,
+          systemPrompt,
           searchEnabled: settings.searchEnabled,
           reasoningEffort: settings.reasoningEffort,
         },

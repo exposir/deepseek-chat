@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSettings } from '../store/settings';
 import type { ReasoningEffort } from '../api/types';
@@ -15,13 +15,22 @@ export function EffortPicker() {
   const effort = useSettings((s) => s.reasoningEffort);
   const setEffort = useSettings((s) => s.setReasoningEffort);
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
+  const btnRef = useRef<HTMLDivElement>(null);
   const current = EFFORTS.find((e) => e.value === effort) ?? EFFORTS[2];
 
+  const openMenu = () => {
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({ left: Math.round(rect.left), bottom: Math.round(window.innerHeight - rect.top + 6) });
+    setOpen(true);
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" ref={btnRef}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? setOpen(false) : openMenu())}
         aria-label="思考强度"
         className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
           effort !== 'none' ? 'border-accent/60 text-accent bg-accent/10' : 'border-border text-text-dim'
@@ -38,43 +47,49 @@ export function EffortPicker() {
         </svg>
         思考 {current.label}
       </button>
-      {open && (
-        <>
-          {/* 点击遮罩关闭（portal 到 body：backdrop-blur 会截断 fixed 定位） */}
-          {createPortal(<div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />, document.body)}
-          <div className="absolute right-0 bottom-full mb-1.5 z-50 w-44 rounded-xl border border-border bg-panel-2 p-1 shadow-xl">
-            {EFFORTS.map((e) => (
-              <button
-                key={e.value}
-                type="button"
-                onClick={() => {
-                  setEffort(e.value);
-                  setOpen(false);
-                }}
-                className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
-                  effort === e.value ? 'text-accent' : 'text-text'
-                }`}
-              >
-                <span>
-                  <span className="text-xs font-medium">{e.label}</span>
-                  <span className="block text-[11px] text-text-dim">{e.hint}</span>
-                </span>
-                {effort === e.value && (
-                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M3 8.5l3.5 3.5L13 5"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      {open &&
+        pos &&
+        // 菜单与遮罩都 portal：backdrop-blur 截断 fixed + 菜单被 body 层遮罩盖住（同 Composer 指令菜单）
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div
+              className="fixed z-50 w-44 rounded-xl border border-border bg-panel-2 p-1 shadow-xl"
+              style={{ left: pos.left, bottom: pos.bottom }}
+            >
+              {EFFORTS.map((e) => (
+                <button
+                  key={e.value}
+                  type="button"
+                  onClick={() => {
+                    setEffort(e.value);
+                    setOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
+                    effort === e.value ? 'text-accent' : 'text-text'
+                  }`}
+                >
+                  <span>
+                    <span className="text-xs font-medium">{e.label}</span>
+                    <span className="block text-[11px] text-text-dim">{e.hint}</span>
+                  </span>
+                  {effort === e.value && (
+                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M3 8.5l3.5 3.5L13 5"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

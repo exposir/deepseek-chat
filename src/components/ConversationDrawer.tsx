@@ -69,14 +69,21 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
         }`}
         onClick={() => setOpen(false)}
       />
-      {/* 抽屉面板：移动端 overlay 滑入；md+ 静态 sidebar 常驻布局，宽度可拖拽 */}
+      {/* 抽屉面板：移动端 overlay 滑入；md+ 静态 sidebar，折叠用宽度过渡动画 */}
       <aside
-        className={`flex flex-col bg-panel/80 backdrop-blur-2xl border-r border-border w-72 md:w-[var(--sidebar-w)] max-w-[80vw]
-          fixed inset-y-0 left-0 z-40 transition-transform duration-200
-          md:static md:relative md:z-0 md:transition-none md:translate-x-0 ${
-            open ? 'translate-x-0' : '-translate-x-full md:hidden'
+        className={`flex flex-col bg-panel/80 backdrop-blur-2xl border-r border-border w-72 md:w-[var(--sidebar-w)] max-w-[80vw] md:overflow-hidden
+          fixed inset-y-0 left-0 z-40 transition-transform duration-200 md:transition-[width,opacity] md:duration-200 md:ease-out
+          md:static md:relative md:z-0 md:translate-x-0 ${
+            open
+              ? 'translate-x-0 md:opacity-100'
+              : '-translate-x-full md:opacity-0 md:pointer-events-none'
           }`}
-        style={{ '--sidebar-w': `${width}px`, paddingTop: 'env(safe-area-inset-top)' } as CSSProperties}
+        style={
+          {
+            '--sidebar-w': `${open ? width : 0}px`,
+            paddingTop: 'env(safe-area-inset-top)',
+          } as CSSProperties
+        }
       >
         {/* 桌面拖拽手柄 */}
         <div

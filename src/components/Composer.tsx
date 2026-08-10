@@ -1,18 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useChat } from '../store/chat';
-import { useSettings } from '../store/settings';
+import { useSettings, type PromptTemplate } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
-
-/** 快捷指令模板：点击填入输入框 */
-const PROMPT_TEMPLATES: { label: string; text: string }[] = [
-  { label: '翻译', text: '把下面的内容翻译成中文（保留格式）：\n\n' },
-  { label: '总结', text: '用三句话总结下面这段文字的核心要点：\n\n' },
-  { label: '改写', text: '改写下面这段文字，让它更简洁、更专业：\n\n' },
-  { label: '写代码', text: '用 Python 写一个：\n\n' },
-  { label: '解释代码', text: '解释下面这段代码的作用和每部分原理：\n\n' },
-  { label: '头脑风暴', text: '关于下面这个主题，给我 10 个有创意的想法：\n\n' },
-];
 
 export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [text, setText] = useState('');
@@ -25,10 +15,20 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const searchEnabled = useSettings((s) => s.searchEnabled);
   const setSearchEnabled = useSettings((s) => s.setSearchEnabled);
   const apiKey = useSettings((s) => s.apiKey);
+  const promptTemplates = useSettings((s) => s.promptTemplates);
   const [tplOpen, setTplOpen] = useState(false);
+  const [tplPos, setTplPos] = useState<{ left: number; bottom: number } | null>(null);
+  const tplBtnRef = useRef<HTMLDivElement>(null);
+
+  const openTpl = () => {
+    const rect = tplBtnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTplPos({ left: Math.round(rect.left), bottom: Math.round(window.innerHeight - rect.top + 6) });
+    setTplOpen(true);
+  };
 
   // 模板填入：输入框有内容则追加，否则直接填入
-  const applyTemplate = (tpl: { label: string; text: string }) => {
+  const applyTemplate = (tpl: PromptTemplate) => {
     setText((prev) => (prev.trim() ? `${prev}\n\n${tpl.text}` : tpl.text));
     setTplOpen(false);
     const el = textareaRef.current;
@@ -98,10 +98,10 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
             联网搜索{searchEnabled ? '已开' : '已关'}
           </button>
           <EffortPicker />
-          <div className="relative">
+          <div className="relative" ref={tplBtnRef}>
             <button
               type="button"
-              onClick={() => setTplOpen((v) => !v)}
+              onClick={() => (tplOpen ? setTplOpen(false) : openTpl())}
               aria-label="快捷指令"
               className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 md:px-3 md:py-1.5 text-xs md:text-[13px] text-text-dim hover:bg-panel-2"
             >
@@ -112,29 +112,34 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               指令
             </button>
             {tplOpen &&
-              // 遮罩必须 portal 到 body：Composer 的 backdrop-blur 会截断 fixed 定位，
-              // 否则遮罩只覆盖输入区、点消息区关不掉
+              tplPos &&
+              // 遮罩和菜单都 portal 到 body：
+              // 1. Composer 的 backdrop-blur 会截断 fixed 定位，遮罩必须在 body
+              // 2. 菜单若留在 Composer 内（z-20 context），会被 body 层 z-40 遮罩盖住，点击失效
               createPortal(
-                <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />,
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />
+                  <div
+                    className="fixed z-50 w-48 rounded-xl border border-border bg-panel-2 p-1 shadow-xl"
+                    style={{ left: tplPos.left, bottom: tplPos.bottom }}
+                  >
+                    {promptTemplates.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => applyTemplate(t)}
+                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-text hover:bg-panel-2/70"
+                      >
+                        <span className="text-text-dim">{t.label}</span>
+                      </button>
+                    ))}
+                    {promptTemplates.length === 0 && (
+                      <div className="px-2.5 py-2 text-xs text-text-dim/60">暂无指令，可在设置中添加</div>
+                    )}
+                  </div>
+                </>,
                 document.body,
               )}
-            {tplOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />
-                <div className="absolute left-0 bottom-full mb-1.5 z-50 w-48 rounded-xl border border-border bg-panel-2 p-1 shadow-xl">
-                  {PROMPT_TEMPLATES.map((t) => (
-                    <button
-                      key={t.label}
-                      type="button"
-                      onClick={() => applyTemplate(t)}
-                      className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-text hover:bg-panel-2/70"
-                    >
-                      <span className="text-text-dim">{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
           </div>
         </div>
         <div className="flex items-end gap-2 pb-2">

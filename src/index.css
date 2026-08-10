@@ -314,3 +314,75 @@ body {
   animation: notice-fade 3s ease forwards;
   pointer-events: none;
 }
+
+/* 会话切换过渡（View Transitions）：旧内容淡出上移，新内容上移淡入 */
+.view-chat-content {
+  view-transition-name: chat-content;
+}
+::view-transition-old(chat-content) {
+  animation: vw-out 0.18s ease forwards;
+}
+::view-transition-new(chat-content) {
+  animation: vw-in 0.28s ease forwards;
+}
+@keyframes vw-out {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@keyframes vw-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* 设置页开/关动画：移动端 iOS 风格滑入，PC 端缩放淡入 */
+.settings-enter,
+.settings-exit {
+  animation-duration: 0.22s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (max-width: 767px) {
+  .settings-enter {
+    animation-name: settings-slide-in;
+  }
+  .settings-exit {
+    animation-name: settings-slide-out;
+    animation-fill-mode: forwards;
+  }
+}
+@media (min-width: 768px) {
+  .settings-enter {
+    animation-name: settings-fade-in;
+    animation-timing-function: ease-out;
+  }
+  .settings-exit {
+    animation-name: settings-fade-out;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+  }
+}
+@keyframes settings-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes settings-slide-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes settings-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+@keyframes settings-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
