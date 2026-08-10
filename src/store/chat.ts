@@ -4,6 +4,7 @@ import {
   buildInputItems,
   createResponseStream,
   extractText,
+  generateTitle,
 } from '../api/responses';
 import type { MessageItem, ResponseItem, Usage } from '../api/types';
 import {
@@ -15,6 +16,7 @@ import {
   nextSeq,
   touchConversation,
   truncateItems,
+  updateConversation,
   type ConversationRecord,
   type ItemRecord,
 } from '../db';
@@ -53,6 +55,10 @@ interface ChatState {
   setDrawerOpen: (open: boolean) => void;
   /** 编辑某条用户消息：截断其后所有内容，文本载入输入框 */
   editMessage: (convId: string, seq: number, text: string) => Promise<void>;
+  /** 重试失败/中断的回合：截断到该轮用户消息，直接重新发送 */
+  retry: (convId: string, userSeq: number, text: string) => Promise<void>;
+  /** 手动重命名会话：标记 titleCustom，自动标题生成不再覆盖 */
+  renameConversation: (convId: string, title: string) => Promise<void>;
   clearDraft: () => void;
 }
 
@@ -372,6 +378,38 @@ export const useChat = create<ChatState>()((set, get) => ({
       isStreaming: false,
       error: failed,
     }));
+
+    // 标题自动演进：首轮 + 每 5 轮，未手动改名时，用旧标题 + 最近 2 轮对话生成
+    const userCount = get().items.filter(
+      (r) => r.item.type === 'message' && (r.item as MessageItem).role === 'user',
+    ).length;
+    const conv = get().conversations.find((c) => c.id === convId);
+    if (settings.apiKey && conv && !conv.titleCustom && (userCount === 1 || userCount % 5 === 0)) {
+      const context =
+        userCount === 1
+          ? trimmed
+          : get()
+              .items.filter((r) => r.item.type === 'message')
+              .slice(-4)
+              .map((r) => {
+                const msg = r.item as MessageItem;
+                return msg.role === 'user' ? `用户：${extractText(msg)}` : `助手：${extractText(msg)}`;
+              })
+              .join('\n')
+              .slice(0, 1500);
+      const title = await generateTitle({
+        apiKey: settings.apiKey,
+        model: settings.model,
+        context,
+        previousTitle: conv.title,
+      });
+      if (title && get().conversations.some((c) => c.id === convId)) {
+        await touchConversation(convId, title);
+        set((s) => ({
+          conversations: s.conversations.map((c) => (c.id === convId ? { ...c, title } : c)),
+        }));
+      }
+    }
   },
 
   stop: () => {
@@ -389,6 +427,27 @@ export const useChat = create<ChatState>()((set, get) => ({
   },
 
   clearDraft: () => set({ draft: null }),
+
+  retry: async (convId, userSeq, text) => {
+    if (get().isStreaming) return;
+    await truncateItems(convId, userSeq);
+    set((s) => ({
+      items: s.items.filter((r) => r.convId !== convId || r.seq < userSeq),
+      streamBlocks: [],
+    }));
+    await get().send(text);
+  },
+
+  renameConversation: async (convId, title) => {
+    const t = title.trim();
+    if (!t) return;
+    await updateConversation(convId, { title: t, titleCustom: true, updatedAt: Date.now() });
+    set((s) => ({
+      conversations: s.conversations.map((c) =>
+        c.id === convId ? { ...c, title: t, titleCustom: true } : c,
+      ),
+    }));
+  },
 
   clearError: () => set({ error: null }),
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),

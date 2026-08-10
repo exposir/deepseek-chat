@@ -28,6 +28,7 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
   const selectConversation = useChat((s) => s.selectConversation);
   const newConversation = useChat((s) => s.newConversation);
   const removeConversation = useChat((s) => s.removeConversation);
+  const renameConversation = useChat((s) => s.renameConversation);
 
   // 桌面侧栏宽度：可拖拽调整，持久化到 localStorage
   const [width, setWidth] = useState(() => {
@@ -120,6 +121,25 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
                       <div className="text-sm truncate">{c.title}</div>
                       <div className="text-[12px] text-text-dim mt-0.5">{formatTime(c.updatedAt)}</div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const t = window.prompt('重命名会话', c.title);
+                        if (t) void renameConversation(c.id, t);
+                      }}
+                      className="shrink-0 p-1.5 rounded-lg text-text-dim/60 hover:text-text"
+                      aria-label="重命名会话"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M11.3 2.3a1.4 1.4 0 0 1 2 2L5.5 12l-3 .8.8-3 8-7.5z"
+                          stroke="currentColor"
+                          strokeWidth="1.3"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {

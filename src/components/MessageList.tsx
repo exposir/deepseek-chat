@@ -121,7 +121,7 @@ export function MessageList() {
         <button
           type="button"
           onClick={jumpToBottom}
-          className="absolute bottom-3 right-3 w-9 h-9 md:w-10 md:h-10 rounded-full bg-panel-2 border border-border flex items-center justify-center text-text-dim shadow-lg hover:bg-panel-2/80"
+          className="absolute right-3 bottom-[calc(130px+env(safe-area-inset-bottom))] w-9 h-9 md:w-10 md:h-10 rounded-full bg-panel-2 border border-border flex items-center justify-center text-text-dim shadow-lg hover:bg-panel-2/80"
           aria-label="回到底部"
         >
           <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">

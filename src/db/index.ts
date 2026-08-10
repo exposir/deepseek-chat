@@ -6,6 +6,8 @@ export interface ConversationRecord {
   title: string;
   createdAt: number;
   updatedAt: number;
+  /** 手动重命名过：自动标题生成不再覆盖 */
+  titleCustom?: boolean;
 }
 
 /** 会话内单条 item：以 API 原始 item JSON 为准，UI 状态由 item 派生 */
@@ -43,6 +45,13 @@ export async function createConversation(record: ConversationRecord): Promise<vo
 export async function touchConversation(id: string, title?: string): Promise<void> {
   const patch: Partial<ConversationRecord> = { updatedAt: Date.now() };
   if (title !== undefined) patch.title = title;
+  await db.conversations.update(id, patch);
+}
+
+export async function updateConversation(
+  id: string,
+  patch: Partial<ConversationRecord>,
+): Promise<void> {
   await db.conversations.update(id, patch);
 }
 

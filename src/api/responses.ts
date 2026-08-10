@@ -170,3 +170,54 @@ export function extractText(item: MessageItem): string {
     .map((p) => p.text ?? '')
     .join('');
 }
+
+export interface GenerateTitleParams {
+  apiKey: string;
+  model: string;
+  /** 最近几轮对话拼接（首轮传首条用户消息） */
+  context: string;
+  /** 会话当前标题：作为主依据，保证标题渐进演化不跑偏 */
+  previousTitle?: string;
+  signal?: AbortSignal;
+}
+
+/**
+ * 异步生成会话标题：非流式 + 关闭思考（none）+ 极小输出上限，成本近零。
+ * 失败返回 null，调用方保持截断标题兜底。
+ */
+export async function generateTitle(params: GenerateTitleParams): Promise<string | null> {
+  try {
+    const content = [
+      params.previousTitle ? `会话原有标题：${params.previousTitle}` : '',
+      `最近对话：\n${params.context}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    const res = await fetch(`${API_BASE_URL}/responses`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${params.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: params.model,
+        instructions:
+          '根据会话原有标题和最近对话内容，生成一个简洁的中文会话标题，不超过 15 个字。' +
+          '以原有标题为主题主依据，结合最近对话微调，让标题渐进演化而不偏离主题。' +
+          '直接输出标题本身，不要引号、书名号和任何标点：',
+        input: [{ type: 'message', role: 'user', content }],
+        stream: false,
+        reasoning: { effort: 'none' },
+        max_output_tokens: 24,
+      }),
+      signal: params.signal,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as ResponseObject;
+    const msg = data.output?.[0] as MessageItem | undefined;
+    const text = (msg ? extractText(msg) : '').trim().replace(/[「」"'“”‘’。.!！?？,，]/g, '');
+    return text.slice(0, 20) || null;
+  } catch {
+    return null;
+  }
+}

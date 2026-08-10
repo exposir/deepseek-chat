@@ -95,6 +95,48 @@ function UserMessageActions({ record, text }: { record: ItemRecord; text: string
   );
 }
 
+/** 失败/中断回合的重试按钮：找到该轮用户消息，截断后重新发送 */
+function RetryButton({ record }: { record: ItemRecord }) {
+  const items = useChat((s) => s.items);
+  const retry = useChat((s) => s.retry);
+  const isStreaming = useChat((s) => s.isStreaming);
+
+  const handleRetry = () => {
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      if (
+        it.convId === record.convId &&
+        it.seq < record.seq &&
+        it.item.type === 'message' &&
+        it.item.role === 'user'
+      ) {
+        void retry(it.convId, it.seq, extractText(it.item as ApiMessageItem));
+        return;
+      }
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleRetry}
+      disabled={isStreaming}
+      className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-text-dim hover:bg-panel-2 disabled:opacity-40"
+    >
+      <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none">
+        <path
+          d="M13 8a5 5 0 1 1-1.5-3.5M13 2v3h-3"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      重试
+    </button>
+  );
+}
+
 /** 已落库 item 的渲染：按类型分发 */
 export const MessageItemView = memo(function MessageItemView({ record }: { record: ItemRecord }) {
   const { item, meta } = record;
@@ -117,8 +159,18 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
     return (
       <div className="space-y-1.5 msg-in">
         <MarkdownContent content={text} />
-        {meta?.interrupted && <div className="text-[12px] text-text-dim/70">已手动停止</div>}
-        {meta?.error && <div className="text-[12px] text-red-400">{meta.error}</div>}
+        {meta?.interrupted && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[12px] text-text-dim/70">已手动停止</div>
+            <RetryButton record={record} />
+          </div>
+        )}
+        {meta?.error && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[12px] text-red-400">{meta.error}</div>
+            <RetryButton record={record} />
+          </div>
+        )}
         <div className="flex items-center justify-between gap-2">
           {meta?.usage ? (
             <ContextUsageLine usage={meta.usage} />
