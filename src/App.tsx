@@ -32,8 +32,8 @@ export default function App() {
   const needKey = error === 'NO_KEY';
 
   return (
-    <div className="app-shell">
-      <header className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-panel">
+    <div className="app-shell relative">
+      <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 py-2.5 border-b border-border bg-panel/60 backdrop-blur-xl">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -72,7 +72,7 @@ export default function App() {
       </header>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border-b border-red-500/30 text-sm text-red-300">
+        <div className="absolute inset-x-0 z-10 flex items-center gap-2 px-4 py-2 bg-red-500/10 border-b border-red-500/30 text-sm text-red-400 backdrop-blur-xl" style={{ top: 'var(--header-h)' }}>
           <span className="flex-1">
             {needKey ? '请先在设置页填写 DeepSeek API Key' : error}
           </span>

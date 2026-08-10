@@ -70,7 +70,7 @@ export function MessageList() {
 
   return (
     <div className="relative flex-1 min-h-0">
-      <div ref={containerRef} className="h-full overflow-y-auto px-4 py-4">
+      <div ref={containerRef} className="h-full overflow-y-auto px-4 pt-[var(--header-h)] pb-[150px]">
         {empty ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-text-dim">
             <div className="text-2xl">👋</div>

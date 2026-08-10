@@ -3,6 +3,16 @@ import { useChat } from '../store/chat';
 import { useSettings } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
 
+/** 快捷指令模板：点击填入输入框 */
+const PROMPT_TEMPLATES: { label: string; text: string }[] = [
+  { label: '翻译', text: '把下面的内容翻译成中文（保留格式）：\n\n' },
+  { label: '总结', text: '用三句话总结下面这段文字的核心要点：\n\n' },
+  { label: '改写', text: '改写下面这段文字，让它更简洁、更专业：\n\n' },
+  { label: '写代码', text: '用 Python 写一个：\n\n' },
+  { label: '解释代码', text: '解释下面这段代码的作用和每部分原理：\n\n' },
+  { label: '头脑风暴', text: '关于下面这个主题，给我 10 个有创意的想法：\n\n' },
+];
+
 export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -14,6 +24,21 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const searchEnabled = useSettings((s) => s.searchEnabled);
   const setSearchEnabled = useSettings((s) => s.setSearchEnabled);
   const apiKey = useSettings((s) => s.apiKey);
+  const [tplOpen, setTplOpen] = useState(false);
+
+  // 模板填入：输入框有内容则追加，否则直接填入
+  const applyTemplate = (tpl: { label: string; text: string }) => {
+    setText((prev) => (prev.trim() ? `${prev}\n\n${tpl.text}` : tpl.text));
+    setTplOpen(false);
+    const el = textareaRef.current;
+    if (el) {
+      el.focus();
+      requestAnimationFrame(() => {
+        el.style.height = 'auto';
+        el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+      });
+    }
+  };
 
   // 编辑消息回退：draft 载入输入框
   useEffect(() => {
@@ -49,7 +74,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   };
 
   return (
-    <div className="safe-bottom border-t border-border bg-panel px-3 pt-2">
+    <div className="safe-bottom absolute bottom-0 inset-x-0 z-20 border-t border-border bg-panel/60 backdrop-blur-xl px-3 pt-2">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center gap-2 pb-1.5">
           <button
@@ -72,6 +97,37 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
             联网搜索{searchEnabled ? '已开' : '已关'}
           </button>
           <EffortPicker />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setTplOpen((v) => !v)}
+              aria-label="快捷指令"
+              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs text-text-dim"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2l1.6 4.4L14 8l-4.4 1.6L8 14l-1.6-4.4L2 8l4.4-1.6L8 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                <path d="M12.5 11.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6.6-1.6z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+              </svg>
+              指令
+            </button>
+            {tplOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />
+                <div className="absolute left-0 bottom-full mb-1.5 z-50 w-48 rounded-xl border border-border bg-panel-2 p-1 shadow-xl">
+                  {PROMPT_TEMPLATES.map((t) => (
+                    <button
+                      key={t.label}
+                      type="button"
+                      onClick={() => applyTemplate(t)}
+                      className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-text hover:bg-panel-2/70"
+                    >
+                      <span className="text-text-dim">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="flex items-end gap-2 pb-2">
           <textarea

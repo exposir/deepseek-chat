@@ -5,7 +5,7 @@ import { extractText } from '../api/responses';
 import { MarkdownContent } from './MarkdownContent';
 import { ReasoningBlock } from './ReasoningBlock';
 import { SearchCallBadge } from './SearchCallBadge';
-import { formatTokens } from '../utils/format';
+import { formatTokens, formatCost } from '../utils/format';
 import { MODELS, useSettings } from '../store/settings';
 import { useChat } from '../store/chat';
 
@@ -13,21 +13,27 @@ function reasoningText(item: ReasoningItem): string {
   return (item.content ?? []).map((c) => c.text).join('');
 }
 
-/** 上下文占用行：input_tokens 即当前上下文长度（无状态全量回传），换算成进度 */
+/** 上下文占用行：input_tokens 即当前上下文长度（无状态全量回传），换算成进度与费用 */
 function ContextUsageLine({ usage }: { usage: Usage }) {
   const model = useSettings((s) => s.model);
-  const window = MODELS.find((m) => m.id === model)?.contextWindow ?? 1_000_000;
+  const modelOpt = MODELS.find((m) => m.id === model);
+  const window = modelOpt?.contextWindow ?? 1_000_000;
   const used = usage.input_tokens ?? 0;
   const pct = Math.min(100, Math.round((used / window) * 100));
   const danger = pct >= 80;
+  const cached = usage.input_tokens_details?.cached_tokens ?? 0;
+  const cost =
+    modelOpt?.pricing &&
+    ((used - cached) / 1_000_000) * modelOpt.pricing.input +
+      (cached / 1_000_000) * modelOpt.pricing.cachedInput +
+      (usage.output_tokens / 1_000_000) * modelOpt.pricing.output;
   return (
     <div className={`text-[12px] ${danger ? 'text-red-400' : 'text-text-dim/70'}`}>
       上下文 {formatTokens(used)} / {formatTokens(window)}（{pct}%）
-      {usage.input_tokens_details?.cached_tokens
-        ? `（缓存 ${formatTokens(usage.input_tokens_details.cached_tokens)}）`
-        : ''}
+      {cached ? `（缓存 ${formatTokens(cached)}）` : ''}
       {' · '}
       输出 {formatTokens(usage.output_tokens)}
+      {cost !== undefined && <span className="text-text-dim/50"> ≈ ¥{formatCost(cost)}</span>}
     </div>
   );
 }
@@ -98,7 +104,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
     const text = extractText(msg);
     if (msg.role === 'user') {
       return (
-        <div className="space-y-0.5">
+        <div className="space-y-0.5 msg-in">
           <div className="flex justify-end">
             <div className="max-w-[85%] rounded-2xl rounded-br-md bg-accent-soft/70 px-4 py-2.5 text-[16px] whitespace-pre-wrap break-words">
               {text}
@@ -109,7 +115,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
       );
     }
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 msg-in">
         <MarkdownContent content={text} />
         {meta?.interrupted && <div className="text-[12px] text-text-dim/70">已手动停止</div>}
         {meta?.error && <div className="text-[12px] text-red-400">{meta.error}</div>}

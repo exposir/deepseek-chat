@@ -9,6 +9,8 @@ export interface ModelOption {
   disabledReason?: string;
   /** 模型上下文窗口（tokens），用于进度显示 */
   contextWindow?: number;
+  /** 计价（元/百万 tokens），用于费用估算 */
+  pricing?: { input: number; cachedInput: number; output: number };
 }
 
 /** 模型常量表：pro 待官方 Responses API 支持后改 enabled 即可 */
@@ -18,6 +20,7 @@ export const MODELS: ModelOption[] = [
     label: 'DeepSeek V4 Flash',
     enabled: true,
     contextWindow: 1_000_000,
+    pricing: { input: 1, cachedInput: 0.02, output: 2 },
   },
   {
     id: 'deepseek-v4-pro',
@@ -25,6 +28,7 @@ export const MODELS: ModelOption[] = [
     enabled: false,
     disabledReason: 'Responses API 支持后开放（官方预计 2026 年 8 月初）',
     contextWindow: 1_000_000,
+    pricing: { input: 3, cachedInput: 0.025, output: 6 },
   },
 ];
 

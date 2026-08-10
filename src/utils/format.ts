@@ -24,3 +24,9 @@ export function formatTokens(n: number): string {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
 }
+
+/** 金额：不足 1 分显示 0.01，其余保留两位小数 */
+export function formatCost(yuan: number): string {
+  if (yuan < 0.01) return '0.01';
+  return yuan.toFixed(2);
+}

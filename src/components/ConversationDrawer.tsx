@@ -1,6 +1,18 @@
 import { useChat } from '../store/chat';
 import { formatTime } from '../utils/format';
 
+/** 按天数差分组：今天 / 昨天 / 本周 / 更早 */
+function dayGroup(ts: number): string {
+  const now = new Date();
+  const d = new Date(ts);
+  const day0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diff = Math.round((day0 - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) / 86400000);
+  if (diff <= 0) return '今天';
+  if (diff === 1) return '昨天';
+  if (diff < 7) return '本周';
+  return '更早';
+}
+
 export function ConversationDrawer() {
   const open = useChat((s) => s.drawerOpen);
   const setOpen = useChat((s) => s.setDrawerOpen);
@@ -37,38 +49,47 @@ export function ConversationDrawer() {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto py-2">
-          {conversations.map((c) => (
-            <div
-              key={c.id}
-              className={`group flex items-center gap-2 mx-2 px-3 py-2.5 rounded-xl cursor-pointer ${
-                c.id === activeConvId ? 'bg-panel-2' : 'active:bg-panel-2/60'
-              }`}
-              onClick={() => void selectConversation(c.id)}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="text-sm truncate">{c.title}</div>
-                <div className="text-[12px] text-text-dim mt-0.5">{formatTime(c.updatedAt)}</div>
+          {(['今天', '昨天', '本周', '更早'] as const).map((group) => {
+            const list = conversations.filter((c) => dayGroup(c.updatedAt) === group);
+            if (list.length === 0) return null;
+            return (
+              <div key={group}>
+                <div className="px-5 pt-2 pb-1 text-[11px] text-text-dim/60">{group}</div>
+                {list.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`group flex items-center gap-2 mx-2 px-3 py-2.5 rounded-xl cursor-pointer ${
+                      c.id === activeConvId ? 'bg-panel-2' : 'active:bg-panel-2/60'
+                    }`}
+                    onClick={() => void selectConversation(c.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm truncate">{c.title}</div>
+                      <div className="text-[12px] text-text-dim mt-0.5">{formatTime(c.updatedAt)}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('删除该会话？')) void removeConversation(c.id);
+                      }}
+                      className="shrink-0 p-1.5 rounded-lg text-text-dim/60 active:text-red-400"
+                      aria-label="删除会话"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5M6.8 7v3.5M9.2 7v3.5"
+                          stroke="currentColor"
+                          strokeWidth="1.2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm('删除该会话？')) void removeConversation(c.id);
-                }}
-                className="shrink-0 p-1.5 rounded-lg text-text-dim/60 active:text-red-400"
-                aria-label="删除会话"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5M6.8 7v3.5M9.2 7v3.5"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </aside>
     </>
