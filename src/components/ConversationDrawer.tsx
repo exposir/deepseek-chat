@@ -24,18 +24,20 @@ export function ConversationDrawer() {
 
   return (
     <>
-      {/* 遮罩 */}
+      {/* 遮罩（仅移动端） */}
       <div
-        className={`fixed inset-0 z-30 bg-black/50 transition-opacity ${
+        className={`fixed inset-0 z-30 bg-black/50 transition-opacity md:hidden ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setOpen(false)}
       />
-      {/* 抽屉面板 */}
+      {/* 抽屉面板：移动端 overlay 滑入；md+ 静态 sidebar 常驻布局 */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[80vw] bg-panel border-r border-border flex flex-col transition-transform duration-200 ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`flex flex-col bg-panel border-r border-border w-72 md:w-80 max-w-[80vw]
+          fixed inset-y-0 left-0 z-40 transition-transform duration-200
+          md:static md:z-0 md:transition-none md:translate-x-0 ${
+            open ? 'translate-x-0' : '-translate-x-full md:hidden'
+          }`}
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="px-4 py-3 flex items-center justify-between border-b border-border">

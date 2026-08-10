@@ -77,7 +77,7 @@ export function MessageList() {
             <div className="text-sm">开始提问吧，支持思维链与联网搜索</div>
           </div>
         ) : (
-          <div className="mx-auto max-w-2xl space-y-4 pb-2">
+          <div className="mx-auto max-w-2xl md:max-w-3xl space-y-4 pb-2">
             {items.map((r) => (
               <MessageItemView key={`${r.convId}-${r.seq}`} record={r} />
             ))}

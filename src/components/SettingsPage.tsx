@@ -38,7 +38,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 safe-bottom">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <div className="mx-auto max-w-2xl md:max-w-3xl space-y-6">
           {/* API Key */}
           <section className="space-y-2">
             <h2 className="text-sm font-medium">DeepSeek API Key</h2>

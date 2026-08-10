@@ -60,6 +60,10 @@ let abortController: AbortController | null = null;
 // StrictMode 下 effect 双调用守卫：init 全局只执行一次
 let initPromise: Promise<void> | null = null;
 
+/** 桌面视口（md breakpoint）：sidebar 常驻布局 */
+const isDesktopViewport = () =>
+  typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+
 // —— rAF 节流缓冲：delta 先积累在模块级 Map，帧回调统一 flush，避免逐 token 重渲染 ——
 const pendingDeltas = new Map<string, string>();
 let flushScheduled = false;
@@ -137,6 +141,7 @@ export const useChat = create<ChatState>()((set, get) => ({
   init: async () => {
     if (initPromise) return initPromise;
     initPromise = (async () => {
+      if (isDesktopViewport()) set({ drawerOpen: true });
       const conversations = await listConversations();
       set({ conversations });
       if (conversations.length > 0) {
@@ -150,7 +155,14 @@ export const useChat = create<ChatState>()((set, get) => ({
 
   selectConversation: async (id) => {
     const items = await listItems(id);
-    set({ activeConvId: id, items, streamBlocks: [], error: null, drawerOpen: false });
+    // 桌面 sidebar 常驻，切会话不关闭；移动端关闭抽屉
+    set({
+      activeConvId: id,
+      items,
+      streamBlocks: [],
+      error: null,
+      drawerOpen: isDesktopViewport() ? get().drawerOpen : false,
+    });
   },
 
   newConversation: async () => {

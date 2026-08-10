@@ -86,12 +86,10 @@ body {
   overscroll-behavior: none;
 }
 
-/* 动态视口 + iOS 安全区 */
+/* 动态视口 + iOS 安全区（flex 布局用 Tailwind 类，便于 md:flex-row 覆盖） */
 .app-shell {
   height: 100dvh;
   padding-top: env(safe-area-inset-top);
-  display: flex;
-  flex-direction: column;
 }
 
 .safe-bottom {

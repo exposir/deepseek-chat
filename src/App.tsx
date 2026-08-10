@@ -9,6 +9,7 @@ import { SettingsPage } from './components/SettingsPage';
 export default function App() {
   const init = useChat((s) => s.init);
   const setDrawerOpen = useChat((s) => s.setDrawerOpen);
+  const drawerOpen = useChat((s) => s.drawerOpen);
   const conversations = useChat((s) => s.conversations);
   const activeConvId = useChat((s) => s.activeConvId);
   const error = useChat((s) => s.error);
@@ -28,15 +29,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 视口在桌面/移动间切换时同步 sidebar 状态（桌面常驻、移动收起）
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setDrawerOpen(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [setDrawerOpen]);
+
   const activeTitle = conversations.find((c) => c.id === activeConvId)?.title ?? 'DeepSeek Chat';
   const needKey = error === 'NO_KEY';
 
   return (
-    <div className="app-shell relative">
+    <div className="app-shell relative flex flex-col md:flex-row">
+      <ConversationDrawer />
+      <div className="relative flex-1 min-w-0 flex flex-col">
       <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 py-2.5 border-b border-border bg-panel/60 backdrop-blur-xl">
         <button
           type="button"
-          onClick={() => setDrawerOpen(true)}
+          onClick={() => setDrawerOpen(!drawerOpen)}
           className="p-2 -ml-1 rounded-lg text-text-dim active:bg-panel-2"
           aria-label="会话列表"
         >
@@ -101,8 +112,8 @@ export default function App() {
 
       <MessageList />
       <Composer onNeedKey={() => setShowSettings(true)} />
+      </div>
 
-      <ConversationDrawer />
       {showSettings && <SettingsPage onClose={() => setShowSettings(false)} />}
     </div>
   );
