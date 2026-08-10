@@ -43,7 +43,8 @@
   --primary: #4d6bfe;
   --primary-foreground: #ffffff;
   --radius: 0.625rem;
-  --header-h: calc(40px + env(safe-area-inset-top));
+  /* 与 App header 实际高度（h-14 + border）精确匹配，保证首条消息不被遮住 */
+  --header-h: 57px;
 }
 
 /* 浅色模式：跟随系统，覆盖同一套 token（Tailwind v4 @theme 变量 + shadcn 变量） */

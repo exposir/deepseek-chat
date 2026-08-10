@@ -19,7 +19,7 @@ export const ReasoningBlock = memo(function ReasoningBlock({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-text-dim"
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs md:text-[13px] text-text-dim hover:bg-panel-2/60"
       >
         <span className={streaming ? 'search-pulse' : ''}>
           {streaming ? '深度思考中…' : '已深度思考'}

@@ -40,7 +40,7 @@ export const SearchCallBadge = memo(function SearchCallBadge({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-text-dim"
+        className="w-full flex items-center gap-1.5 px-3 py-2 text-xs md:text-[13px] text-text-dim hover:bg-panel-2/60"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
           <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />

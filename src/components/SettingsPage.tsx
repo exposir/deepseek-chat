@@ -38,7 +38,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 safe-bottom">
-        <div className="mx-auto max-w-2xl md:max-w-3xl space-y-6">
+        <div className="mx-auto max-w-2xl md:max-w-5xl space-y-6">
           {/* API Key */}
           <section className="space-y-2">
             <h2 className="text-sm font-medium">DeepSeek API Key</h2>
@@ -87,7 +87,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
                   className={`w-full flex items-center justify-between rounded-xl border px-3.5 py-3 text-left ${
                     settings.model === m.id
                       ? 'border-accent/60 bg-accent/10'
-                      : 'border-border bg-panel-2'
+                      : 'border-border bg-panel-2 hover:bg-panel-2/80'
                   } ${m.enabled ? '' : 'opacity-50'}`}
                 >
                   <div>
@@ -124,7 +124,7 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
                   className={`rounded-xl border px-3 py-2.5 ${
                     settings.reasoningEffort === e.value
                       ? 'border-accent/60 bg-accent/10'
-                      : 'border-border bg-panel-2'
+                      : 'border-border bg-panel-2 hover:bg-panel-2/80'
                   }`}
                 >
                   <div className="text-sm">{e.label}</div>

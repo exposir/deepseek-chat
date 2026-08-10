@@ -61,7 +61,7 @@ export function ConversationDrawer() {
                   <div
                     key={c.id}
                     className={`group flex items-center gap-2 mx-2 px-3 py-2.5 rounded-xl cursor-pointer ${
-                      c.id === activeConvId ? 'bg-panel-2' : 'active:bg-panel-2/60'
+                      c.id === activeConvId ? 'bg-panel-2' : 'active:bg-panel-2/60 hover:bg-panel-2/50'
                     }`}
                     onClick={() => void selectConversation(c.id)}
                   >

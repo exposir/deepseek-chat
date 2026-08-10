@@ -73,11 +73,11 @@ export function MessageList() {
       <div ref={containerRef} className="h-full overflow-y-auto px-4 pt-[var(--header-h)] pb-[150px]">
         {empty ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-text-dim">
-            <div className="text-2xl">👋</div>
-            <div className="text-sm">开始提问吧，支持思维链与联网搜索</div>
+            <div className="text-2xl md:text-4xl">👋</div>
+            <div className="text-sm md:text-base">开始提问吧，支持思维链与联网搜索</div>
           </div>
         ) : (
-          <div className="mx-auto max-w-2xl md:max-w-3xl space-y-4 pb-2">
+          <div className="mx-auto max-w-2xl md:max-w-5xl space-y-4 md:space-y-6 pb-2">
             {items.map((r) => (
               <MessageItemView key={`${r.convId}-${r.seq}`} record={r} />
             ))}
@@ -94,7 +94,7 @@ export function MessageList() {
         <button
           type="button"
           onClick={jumpToBottom}
-          className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-panel-2 border border-border flex items-center justify-center text-text-dim shadow-lg"
+          className="absolute bottom-3 right-3 w-9 h-9 md:w-10 md:h-10 rounded-full bg-panel-2 border border-border flex items-center justify-center text-text-dim shadow-lg hover:bg-panel-2/80"
           aria-label="回到底部"
         >
           <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">

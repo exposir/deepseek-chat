@@ -75,15 +75,15 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
 
   return (
     <div className="safe-bottom absolute bottom-0 inset-x-0 z-20 border-t border-border bg-panel/60 backdrop-blur-xl px-3 pt-2">
-      <div className="mx-auto max-w-2xl md:max-w-3xl">
+      <div className="mx-auto max-w-2xl md:max-w-5xl">
         <div className="flex items-center gap-2 pb-1.5">
           <button
             type="button"
             onClick={() => setSearchEnabled(!searchEnabled)}
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 md:px-3 md:py-1.5 text-xs md:text-[13px] transition-colors ${
               searchEnabled
-                ? 'border-accent/60 text-accent bg-accent/10'
-                : 'border-border text-text-dim'
+                ? 'border-accent/60 text-accent bg-accent/10 hover:bg-accent/15'
+                : 'border-border text-text-dim hover:bg-panel-2'
             }`}
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
@@ -102,7 +102,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               type="button"
               onClick={() => setTplOpen((v) => !v)}
               aria-label="快捷指令"
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs text-text-dim"
+              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 md:px-3 md:py-1.5 text-xs md:text-[13px] text-text-dim hover:bg-panel-2"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
                 <path d="M8 2l1.6 4.4L14 8l-4.4 1.6L8 14l-1.6-4.4L2 8l4.4-1.6L8 2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
@@ -149,13 +149,13 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
             }}
             rows={1}
             placeholder="输入消息…"
-            className="flex-1 resize-none rounded-2xl border border-border bg-panel-2 px-4 py-2.5 text-[16px] outline-none placeholder:text-text-dim/60 focus:border-accent/60"
+            className="flex-1 resize-none rounded-2xl border border-border bg-panel-2 px-4 py-2.5 md:py-3 text-[16px] outline-none placeholder:text-text-dim/60 focus:border-accent/60"
           />
           {isStreaming ? (
             <button
               type="button"
               onClick={stop}
-              className="w-10 h-10 shrink-0 rounded-full bg-panel-2 border border-border flex items-center justify-center text-text"
+              className="w-10 h-10 md:w-11 md:h-11 shrink-0 rounded-full bg-panel-2 border border-border flex items-center justify-center text-text hover:bg-panel-2/80"
               aria-label="停止"
             >
               <span className="block w-3 h-3 rounded-[2px] bg-current" />
@@ -165,7 +165,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               type="button"
               onClick={handleSend}
               disabled={!text.trim()}
-              className="w-10 h-10 shrink-0 rounded-full bg-accent disabled:opacity-40 flex items-center justify-center text-white"
+              className="w-10 h-10 md:w-11 md:h-11 shrink-0 rounded-full bg-accent disabled:opacity-40 flex items-center justify-center text-white hover:opacity-90"
               aria-label="发送"
             >
               <svg className="w-4.5 h-4.5" viewBox="0 0 16 16" fill="none">

@@ -44,7 +44,7 @@ export default function App() {
     <div className="app-shell relative flex flex-col md:flex-row">
       <ConversationDrawer />
       <div className="relative flex-1 min-w-0 flex flex-col">
-      <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 py-2.5 border-b border-border bg-panel/60 backdrop-blur-xl">
+      <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 h-14 border-b border-border bg-panel/60 backdrop-blur-xl">
         <button
           type="button"
           onClick={() => setDrawerOpen(!drawerOpen)}
@@ -61,7 +61,7 @@ export default function App() {
           </svg>
         </button>
         <div className="flex-1 min-w-0 text-center">
-          <div className="text-sm font-medium truncate">{activeTitle}</div>
+          <div className="text-sm md:text-base font-medium truncate">{activeTitle}</div>
           <div className="text-[11px] text-text-dim">{model}</div>
         </div>
         <button

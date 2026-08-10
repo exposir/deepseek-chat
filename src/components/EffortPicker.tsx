@@ -50,7 +50,7 @@ export function EffortPicker() {
                   setEffort(e.value);
                   setOpen(false);
                 }}
-                className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left ${
+                className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
                   effort === e.value ? 'text-accent' : 'text-text'
                 }`}
               >
