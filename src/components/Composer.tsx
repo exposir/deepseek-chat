@@ -75,7 +75,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   };
 
   return (
-    <div className="safe-bottom absolute bottom-0 inset-x-0 z-20 border-t border-border bg-panel/60 backdrop-blur-xl px-3 pt-2">
+    <div className="safe-bottom absolute bottom-0 inset-x-0 z-20 border-t border-border bg-panel/80 backdrop-blur-2xl px-3 pt-2">
       <div className="mx-auto max-w-2xl md:max-w-5xl">
         <div className="flex items-center gap-2 pb-1.5">
           <button
@@ -173,7 +173,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               type="button"
               onClick={handleSend}
               disabled={!text.trim()}
-              className="w-10 h-10 md:w-11 md:h-11 shrink-0 rounded-full bg-accent disabled:opacity-40 flex items-center justify-center text-white hover:opacity-90"
+              className="w-10 h-10 md:w-11 md:h-11 shrink-0 rounded-full bg-accent disabled:opacity-40 flex items-center justify-center text-[var(--color-accent-foreground)] hover:opacity-90"
               aria-label="发送"
             >
               <svg className="w-4.5 h-4.5" viewBox="0 0 16 16" fill="none">

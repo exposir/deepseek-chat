@@ -9,39 +9,41 @@
 @source '../node_modules/@streamdown/cjk/dist/*.js';
 
 @theme {
-  --color-bg: #0f1117;
-  --color-panel: #171a23;
-  --color-panel-2: #1e222e;
-  --color-border: #2a2f3d;
-  --color-accent: #4d6bfe;
-  --color-accent-soft: #2b3a80;
-  --color-text: #e6e8ee;
-  --color-text-dim: #9aa1b2;
+  /* SpaceX 风格深色：纯黑底、中性灰阶、白色强调 */
+  --color-bg: #000000;
+  --color-panel: #0c0d0f;
+  --color-panel-2: #17181b;
+  --color-border: #2b2d31;
+  --color-accent: #ffffff;
+  --color-accent-foreground: #0c0d0f;
+  --color-accent-soft: #1c1e22;
+  --color-text: #f5f5f5;
+  --color-text-dim: #8a8d93;
 
   /* Streamdown 依赖的 shadcn 设计令牌（映射到本应用深色系） */
-  --color-background: #0f1117;
-  --color-foreground: #e6e8ee;
-  --color-card: #171a23;
-  --color-card-foreground: #e6e8ee;
-  --color-muted: #1e222e;
-  --color-muted-foreground: #9aa1b2;
-  --color-input: #2a2f3d;
-  --color-primary: #4d6bfe;
-  --color-primary-foreground: #ffffff;
+  --color-background: #000000;
+  --color-foreground: #f5f5f5;
+  --color-card: #0c0d0f;
+  --color-card-foreground: #f5f5f5;
+  --color-muted: #17181b;
+  --color-muted-foreground: #8a8d93;
+  --color-input: #2b2d31;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #0c0d0f;
 }
 
-/* shadcn 组件运行时读取的 CSS 变量（深色单主题） */
+/* shadcn 组件运行时读取的 CSS 变量（深色默认） */
 :root {
-  --background: #0f1117;
-  --foreground: #e6e8ee;
-  --card: #171a23;
-  --card-foreground: #e6e8ee;
-  --muted: #1e222e;
-  --muted-foreground: #9aa1b2;
-  --border: #2a2f3d;
-  --input: #2a2f3d;
-  --primary: #4d6bfe;
-  --primary-foreground: #ffffff;
+  --background: #000000;
+  --foreground: #f5f5f5;
+  --card: #0c0d0f;
+  --card-foreground: #f5f5f5;
+  --muted: #17181b;
+  --muted-foreground: #8a8d93;
+  --border: #2b2d31;
+  --input: #2b2d31;
+  --primary: #ffffff;
+  --primary-foreground: #0c0d0f;
   --radius: 0.625rem;
   /* 与 App header 实际高度（h-14 + border）精确匹配，保证首条消息不被遮住 */
   --header-h: 57px;
@@ -56,6 +58,7 @@
     --color-panel-2: #eef0f4;
     --color-border: #dde1e8;
     --color-accent: #3b5bdb;
+    --color-accent-foreground: #ffffff;
     --color-accent-soft: #e2e8ff;
     --color-text: #191d24;
     --color-text-dim: #5f6a7c;
@@ -88,6 +91,7 @@
   --color-panel-2: #eef0f4;
   --color-border: #dde1e8;
   --color-accent: #3b5bdb;
+  --color-accent-foreground: #ffffff;
   --color-accent-soft: #e2e8ff;
   --color-text: #191d24;
   --color-text-dim: #5f6a7c;
@@ -114,33 +118,36 @@
 
 /* 手动深色：覆盖回深色（默认即深色，显式声明防 auto 浅色串扰） */
 :root[data-theme='dark'] {
-  --color-bg: #0f1117;
-  --color-panel: #171a23;
-  --color-panel-2: #1e222e;
-  --color-border: #2a2f3d;
-  --color-accent: #4d6bfe;
-  --color-accent-soft: #2b3a80;
-  --color-text: #e6e8ee;
-  --color-text-dim: #9aa1b2;
+  --color-bg: #000000;
+  --color-panel: #0c0d0f;
+  --color-panel-2: #17181b;
+  --color-border: #2b2d31;
+  --color-accent: #ffffff;
+  --color-accent-foreground: #0c0d0f;
+  --color-accent-soft: #1c1e22;
+  --color-text: #f5f5f5;
+  --color-text-dim: #8a8d93;
 
-  --color-background: #0f1117;
-  --color-foreground: #e6e8ee;
-  --color-card: #171a23;
-  --color-card-foreground: #e6e8ee;
-  --color-muted: #1e222e;
-  --color-muted-foreground: #9aa1b2;
-  --color-input: #2a2f3d;
-  --color-primary: #4d6bfe;
-  --color-primary-foreground: #ffffff;
+  --color-background: #000000;
+  --color-foreground: #f5f5f5;
+  --color-card: #0c0d0f;
+  --color-card-foreground: #f5f5f5;
+  --color-muted: #17181b;
+  --color-muted-foreground: #8a8d93;
+  --color-input: #2b2d31;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #0c0d0f;
 
-  --background: #0f1117;
-  --foreground: #e6e8ee;
-  --card: #171a23;
-  --card-foreground: #e6e8ee;
-  --muted: #1e222e;
-  --muted-foreground: #9aa1b2;
-  --border: #2a2f3d;
-  --input: #2a2f3d;
+  --background: #000000;
+  --foreground: #f5f5f5;
+  --card: #0c0d0f;
+  --card-foreground: #f5f5f5;
+  --muted: #17181b;
+  --muted-foreground: #8a8d93;
+  --border: #2b2d31;
+  --input: #2b2d31;
+  --primary: #ffffff;
+  --primary-foreground: #0c0d0f;
 }
 
 html,
@@ -291,4 +298,19 @@ body {
 }
 .msg-in {
   animation: msg-in 0.25s ease-out;
+}
+
+/* 链接设置 Key 提示：停留后淡出（3s 内前 70% 保持，后 30% 淡出，与 JS 移除时机同步） */
+@keyframes notice-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.key-notice {
+  animation: notice-fade 3s ease forwards;
+  pointer-events: none;
 }

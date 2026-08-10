@@ -16,9 +16,11 @@ export default function App() {
   const error = useChat((s) => s.error);
   const clearError = useChat((s) => s.clearError);
   const apiKey = useSettings((s) => s.apiKey);
+  const setApiKey = useSettings((s) => s.setApiKey);
   const theme = useSettings((s) => s.theme);
   const model = useSettings((s) => s.model);
   const [showSettings, setShowSettings] = useState(false);
+  const [keyNotice, setKeyNotice] = useState(false);
 
   useEffect(() => {
     void init();
@@ -28,6 +30,17 @@ export default function App() {
   useEffect(() => {
     if (!apiKey) setShowSettings(true);
     // 仅初始化时判断一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // URL ?apiKey=xxx：幂等应用 + 轻提示（main.tsx 已同步写入，此处保证提示展示）
+  useEffect(() => {
+    const key = new URLSearchParams(window.location.search).get('apiKey')?.trim();
+    if (!key) return;
+    setApiKey(key);
+    setKeyNotice(true);
+    const t = setTimeout(() => setKeyNotice(false), 3000);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -45,7 +58,7 @@ export default function App() {
     const meta = document.querySelector('meta[name="theme-color"]');
     const isDark =
       theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    if (meta) meta.setAttribute('content', isDark ? '#0f1117' : '#f4f5f8');
+    if (meta) meta.setAttribute('content', isDark ? '#000000' : '#f4f5f8');
   }, [theme]);
 
   const activeTitle = conversations.find((c) => c.id === activeConvId)?.title ?? 'DeepSeek Chat';
@@ -55,7 +68,7 @@ export default function App() {
     <div className="app-shell relative flex flex-col md:flex-row">
       <ConversationDrawer onOpenSettings={() => setShowSettings(true)} />
       <div className="relative flex-1 min-w-0 flex flex-col">
-      <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 h-14 border-b border-border bg-panel/60 backdrop-blur-xl">
+      <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 h-14 border-b border-border bg-panel/80 backdrop-blur-2xl">
         <button
           type="button"
           onClick={() => setDrawerOpen(!drawerOpen)}
@@ -112,6 +125,15 @@ export default function App() {
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {keyNotice && (
+        <div
+          className="key-notice absolute inset-x-0 z-10 flex items-center justify-center px-4 py-2 bg-accent/10 border-b border-accent/30 text-sm text-accent backdrop-blur-xl"
+          style={{ top: 'var(--header-h)' }}
+        >
+          已通过链接设置 API Key
         </div>
       )}
 

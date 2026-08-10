@@ -57,7 +57,7 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       apiKey: '',
       model: DEFAULT_MODEL,
-      reasoningEffort: 'high',
+      reasoningEffort: 'max',
       searchEnabled: true,
       systemPrompt: '',
       theme: 'auto',
