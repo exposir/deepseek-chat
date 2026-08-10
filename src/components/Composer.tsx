@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../store/chat';
 import { useSettings } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
@@ -9,9 +9,24 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const isStreaming = useChat((s) => s.isStreaming);
   const send = useChat((s) => s.send);
   const stop = useChat((s) => s.stop);
+  const draft = useChat((s) => s.draft);
+  const clearDraft = useChat((s) => s.clearDraft);
   const searchEnabled = useSettings((s) => s.searchEnabled);
   const setSearchEnabled = useSettings((s) => s.setSearchEnabled);
   const apiKey = useSettings((s) => s.apiKey);
+
+  // 编辑消息回退：draft 载入输入框
+  useEffect(() => {
+    if (draft === null) return;
+    setText(draft);
+    clearDraft();
+    const el = textareaRef.current;
+    if (el) {
+      el.focus();
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+    }
+  }, [draft, clearDraft]);
 
   const handleSend = () => {
     const trimmed = text.trim();

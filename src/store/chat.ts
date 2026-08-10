@@ -14,6 +14,7 @@ import {
   listItems,
   nextSeq,
   touchConversation,
+  truncateItems,
   type ConversationRecord,
   type ItemRecord,
 } from '../db';
@@ -40,6 +41,8 @@ interface ChatState {
   isStreaming: boolean;
   error: string | null;
   drawerOpen: boolean;
+  /** 编辑消息回退后待载入输入框的文本（Composer 消费后清空） */
+  draft: string | null;
   init: () => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
   newConversation: () => Promise<void>;
@@ -48,6 +51,9 @@ interface ChatState {
   stop: () => void;
   clearError: () => void;
   setDrawerOpen: (open: boolean) => void;
+  /** 编辑某条用户消息：截断其后所有内容，文本载入输入框 */
+  editMessage: (convId: string, seq: number, text: string) => Promise<void>;
+  clearDraft: () => void;
 }
 
 let abortController: AbortController | null = null;
@@ -126,6 +132,7 @@ export const useChat = create<ChatState>()((set, get) => ({
   isStreaming: false,
   error: null,
   drawerOpen: false,
+  draft: null,
 
   init: async () => {
     if (initPromise) return initPromise;
@@ -345,6 +352,18 @@ export const useChat = create<ChatState>()((set, get) => ({
   stop: () => {
     abortController?.abort();
   },
+
+  editMessage: async (convId, seq, text) => {
+    if (get().isStreaming) return;
+    await truncateItems(convId, seq);
+    set((s) => ({
+      items: s.items.filter((r) => r.convId !== convId || r.seq < seq),
+      streamBlocks: [],
+      draft: text,
+    }));
+  },
+
+  clearDraft: () => set({ draft: null }),
 
   clearError: () => set({ error: null }),
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),

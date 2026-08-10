@@ -61,6 +61,11 @@ export async function appendItem(record: ItemRecord): Promise<void> {
   await db.items.add(record);
 }
 
+/** 截断会话：删除 seq >= fromSeq 的所有 item（编辑消息回退用） */
+export async function truncateItems(convId: string, fromSeq: number): Promise<void> {
+  await db.items.where('[convId+seq]').between([convId, fromSeq], [convId, Infinity]).delete();
+}
+
 export async function nextSeq(convId: string): Promise<number> {
   const last = await db.items.where('[convId+seq]').between([convId, 0], [convId, Infinity]).last();
   return (last?.seq ?? -1) + 1;

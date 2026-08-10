@@ -7,16 +7,24 @@ export interface ModelOption {
   label: string;
   enabled: boolean;
   disabledReason?: string;
+  /** 模型上下文窗口（tokens），用于进度显示 */
+  contextWindow?: number;
 }
 
 /** 模型常量表：pro 待官方 Responses API 支持后改 enabled 即可 */
 export const MODELS: ModelOption[] = [
-  { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', enabled: true },
+  {
+    id: 'deepseek-v4-flash',
+    label: 'DeepSeek V4 Flash',
+    enabled: true,
+    contextWindow: 1_000_000,
+  },
   {
     id: 'deepseek-v4-pro',
     label: 'DeepSeek V4 Pro',
     enabled: false,
     disabledReason: 'Responses API 支持后开放（官方预计 2026 年 8 月初）',
+    contextWindow: 1_000_000,
   },
 ];
 
