@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useChat } from '../store/chat';
 import { useSettings } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
@@ -110,6 +111,13 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               </svg>
               指令
             </button>
+            {tplOpen &&
+              // 遮罩必须 portal 到 body：Composer 的 backdrop-blur 会截断 fixed 定位，
+              // 否则遮罩只覆盖输入区、点消息区关不掉
+              createPortal(
+                <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />,
+                document.body,
+              )}
             {tplOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />

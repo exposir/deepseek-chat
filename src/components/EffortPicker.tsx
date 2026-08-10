@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSettings } from '../store/settings';
 import type { ReasoningEffort } from '../api/types';
 
@@ -39,8 +40,8 @@ export function EffortPicker() {
       </button>
       {open && (
         <>
-          {/* 点击遮罩关闭 */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          {/* 点击遮罩关闭（portal 到 body：backdrop-blur 会截断 fixed 定位） */}
+          {createPortal(<div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />, document.body)}
           <div className="absolute right-0 bottom-full mb-1.5 z-50 w-44 rounded-xl border border-border bg-panel-2 p-1 shadow-xl">
             {EFFORTS.map((e) => (
               <button
