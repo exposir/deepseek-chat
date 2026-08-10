@@ -47,9 +47,10 @@
   --header-h: 57px;
 }
 
-/* 浅色模式：跟随系统，覆盖同一套 token（Tailwind v4 @theme 变量 + shadcn 变量） */
+/* 主题：深色为默认；data-theme 由设置页控制（auto 跟随系统，light/dark 手动） */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme='dark']),
+  :root[data-theme='light'] {
     --color-bg: #f4f5f8;
     --color-panel: #ffffff;
     --color-panel-2: #eef0f4;
@@ -78,6 +79,68 @@
     --border: #dde1e8;
     --input: #dde1e8;
   }
+}
+
+/* 手动浅色：无论系统深浅都生效 */
+:root[data-theme='light'] {
+  --color-bg: #f4f5f8;
+  --color-panel: #ffffff;
+  --color-panel-2: #eef0f4;
+  --color-border: #dde1e8;
+  --color-accent: #3b5bdb;
+  --color-accent-soft: #e2e8ff;
+  --color-text: #191d24;
+  --color-text-dim: #5f6a7c;
+
+  --color-background: #f4f5f8;
+  --color-foreground: #191d24;
+  --color-card: #ffffff;
+  --color-card-foreground: #191d24;
+  --color-muted: #eef0f4;
+  --color-muted-foreground: #5f6a7c;
+  --color-input: #dde1e8;
+  --color-primary: #3b5bdb;
+  --color-primary-foreground: #ffffff;
+
+  --background: #f4f5f8;
+  --foreground: #191d24;
+  --card: #ffffff;
+  --card-foreground: #191d24;
+  --muted: #eef0f4;
+  --muted-foreground: #5f6a7c;
+  --border: #dde1e8;
+  --input: #dde1e8;
+}
+
+/* 手动深色：覆盖回深色（默认即深色，显式声明防 auto 浅色串扰） */
+:root[data-theme='dark'] {
+  --color-bg: #0f1117;
+  --color-panel: #171a23;
+  --color-panel-2: #1e222e;
+  --color-border: #2a2f3d;
+  --color-accent: #4d6bfe;
+  --color-accent-soft: #2b3a80;
+  --color-text: #e6e8ee;
+  --color-text-dim: #9aa1b2;
+
+  --color-background: #0f1117;
+  --color-foreground: #e6e8ee;
+  --color-card: #171a23;
+  --color-card-foreground: #e6e8ee;
+  --color-muted: #1e222e;
+  --color-muted-foreground: #9aa1b2;
+  --color-input: #2a2f3d;
+  --color-primary: #4d6bfe;
+  --color-primary-foreground: #ffffff;
+
+  --background: #0f1117;
+  --foreground: #e6e8ee;
+  --card: #171a23;
+  --card-foreground: #e6e8ee;
+  --muted: #1e222e;
+  --muted-foreground: #9aa1b2;
+  --border: #2a2f3d;
+  --input: #2a2f3d;
 }
 
 html,

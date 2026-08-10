@@ -12,9 +12,11 @@ export default function App() {
   const drawerOpen = useChat((s) => s.drawerOpen);
   const conversations = useChat((s) => s.conversations);
   const activeConvId = useChat((s) => s.activeConvId);
+  const newConversation = useChat((s) => s.newConversation);
   const error = useChat((s) => s.error);
   const clearError = useChat((s) => s.clearError);
   const apiKey = useSettings((s) => s.apiKey);
+  const theme = useSettings((s) => s.theme);
   const model = useSettings((s) => s.model);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -37,12 +39,21 @@ export default function App() {
     return () => mq.removeEventListener('change', onChange);
   }, [setDrawerOpen]);
 
+  // 主题同步到 html[data-theme]（CSS 据此切浅/深色），并同步状态栏主题色
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const isDark =
+      theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (meta) meta.setAttribute('content', isDark ? '#0f1117' : '#f4f5f8');
+  }, [theme]);
+
   const activeTitle = conversations.find((c) => c.id === activeConvId)?.title ?? 'DeepSeek Chat';
   const needKey = error === 'NO_KEY';
 
   return (
     <div className="app-shell relative flex flex-col md:flex-row">
-      <ConversationDrawer />
+      <ConversationDrawer onOpenSettings={() => setShowSettings(true)} />
       <div className="relative flex-1 min-w-0 flex flex-col">
       <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 h-14 border-b border-border bg-panel/60 backdrop-blur-xl">
         <button
@@ -66,18 +77,12 @@ export default function App() {
         </div>
         <button
           type="button"
-          onClick={() => setShowSettings(true)}
-          className="p-2 -mr-1 rounded-lg text-text-dim active:bg-panel-2"
-          aria-label="设置"
+          onClick={() => void newConversation()}
+          className="p-2 -mr-1 rounded-lg text-text-dim active:bg-panel-2 hover:bg-panel-2"
+          aria-label="新建会话"
         >
           <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.4" />
-            <path
-              d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
+            <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </button>
       </header>

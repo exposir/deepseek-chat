@@ -34,17 +34,22 @@ export const MODELS: ModelOption[] = [
 
 export const DEFAULT_MODEL = 'deepseek-v4-flash';
 
+/** 主题：auto 跟随系统，light/dark 手动指定 */
+export type Theme = 'auto' | 'light' | 'dark';
+
 interface SettingsState {
   apiKey: string;
   model: string;
   reasoningEffort: ReasoningEffort;
   searchEnabled: boolean;
   systemPrompt: string;
+  theme: Theme;
   setApiKey: (key: string) => void;
   setModel: (model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setSearchEnabled: (enabled: boolean) => void;
   setSystemPrompt: (prompt: string) => void;
+  setTheme: (theme: Theme) => void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -55,11 +60,13 @@ export const useSettings = create<SettingsState>()(
       reasoningEffort: 'high',
       searchEnabled: true,
       systemPrompt: '',
+      theme: 'auto',
       setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
       setModel: (model) => set({ model }),
       setReasoningEffort: (reasoningEffort) => set({ reasoningEffort }),
       setSearchEnabled: (searchEnabled) => set({ searchEnabled }),
       setSystemPrompt: (systemPrompt) => set({ systemPrompt }),
+      setTheme: (theme) => set({ theme }),
     }),
     {
       name: 'ds-chat-settings',

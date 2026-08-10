@@ -1,6 +1,12 @@
 import { useState } from 'react';
-import { MODELS, useSettings } from '../store/settings';
+import { MODELS, useSettings, type Theme } from '../store/settings';
 import { EFFORTS } from './EffortPicker';
+
+const THEMES: { value: Theme; label: string; hint: string }[] = [
+  { value: 'auto', label: '自动', hint: '跟随系统' },
+  { value: 'light', label: '浅色', hint: '明亮' },
+  { value: 'dark', label: '深色', hint: '护眼' },
+];
 
 export function SettingsPage({ onClose }: { onClose: () => void }) {
   const settings = useSettings();
@@ -129,6 +135,28 @@ export function SettingsPage({ onClose }: { onClose: () => void }) {
                 >
                   <div className="text-sm">{e.label}</div>
                   <div className="text-[12px] text-text-dim mt-0.5">{e.hint}</div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 主题 */}
+          <section className="space-y-2">
+            <h2 className="text-sm font-medium">主题（背景色）</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => settings.setTheme(t.value)}
+                  className={`rounded-xl border px-3 py-2.5 ${
+                    settings.theme === t.value
+                      ? 'border-accent/60 bg-accent/10'
+                      : 'border-border bg-panel-2 hover:bg-panel-2/80'
+                  }`}
+                >
+                  <div className="text-sm">{t.label}</div>
+                  <div className="text-[12px] text-text-dim mt-0.5">{t.hint}</div>
                 </button>
               ))}
             </div>
