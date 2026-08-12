@@ -76,7 +76,7 @@ export function MessageList() {
   };
 
   const empty = items.length === 0 && streamBlocks.length === 0;
-  const apiKey = useSettings((s) => s.apiKey);
+  const apiKey = useSettings((s) => s.apiKeys[s.provider]);
   const send = useChat((s) => s.send);
 
   return (

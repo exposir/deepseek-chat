@@ -206,7 +206,7 @@ export const useChat = create<ChatState>()((set, get) => ({
     const trimmed = text.trim();
     if (!trimmed || get().isStreaming) return;
     const settings = useSettings.getState();
-    if (!settings.apiKey) {
+    if (!settings.apiKeys[settings.provider]) {
       set({ error: 'NO_KEY' });
       return;
     }
@@ -247,7 +247,7 @@ export const useChat = create<ChatState>()((set, get) => ({
     try {
       await createResponseStream(
         {
-          apiKey: settings.apiKey,
+          apiKey: settings.apiKeys[settings.provider],
           baseUrl: apiBaseUrl(settings.provider),
           model: settings.model,
           input,
@@ -386,7 +386,7 @@ export const useChat = create<ChatState>()((set, get) => ({
       (r) => r.item.type === 'message' && (r.item as MessageItem).role === 'user',
     ).length;
     const conv = get().conversations.find((c) => c.id === convId);
-    if (settings.apiKey && conv && !conv.titleCustom && (userCount === 1 || userCount % 5 === 0)) {
+    if (settings.apiKeys[settings.provider] && conv && !conv.titleCustom && (userCount === 1 || userCount % 5 === 0)) {
       const context =
         userCount === 1
           ? trimmed
@@ -400,7 +400,7 @@ export const useChat = create<ChatState>()((set, get) => ({
               .join('\n')
               .slice(0, 1500);
       const title = await generateTitle({
-        apiKey: settings.apiKey,
+        apiKey: settings.apiKeys[settings.provider],
         baseUrl: apiBaseUrl(settings.provider),
         model: settings.model,
         context,

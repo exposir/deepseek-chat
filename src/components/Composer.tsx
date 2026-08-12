@@ -14,7 +14,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const clearDraft = useChat((s) => s.clearDraft);
   const searchEnabled = useSettings((s) => s.searchEnabled);
   const setSearchEnabled = useSettings((s) => s.setSearchEnabled);
-  const apiKey = useSettings((s) => s.apiKey);
+  const apiKey = useSettings((s) => s.apiKeys[s.provider]);
   const promptTemplates = useSettings((s) => s.promptTemplates);
   const [tplOpen, setTplOpen] = useState(false);
   const [tplPos, setTplPos] = useState<{ left: number; bottom: number } | null>(null);

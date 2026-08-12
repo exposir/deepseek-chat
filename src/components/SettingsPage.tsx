@@ -20,7 +20,7 @@ export function SettingsPage({
   leaving?: boolean;
 }) {
   const settings = useSettings();
-  const [keyDraft, setKeyDraft] = useState(settings.apiKey);
+  const [keyDraft, setKeyDraft] = useState(settings.apiKeys[settings.provider]);
   const [showKey, setShowKey] = useState(false);
   const provider = PROVIDERS.find((p) => p.value === settings.provider) ?? PROVIDERS[0];
   const models = MODELS_BY_PROVIDER[settings.provider];
@@ -28,6 +28,8 @@ export function SettingsPage({
   const selectProvider = (value: (typeof PROVIDERS)[number]['value']) => {
     if (value === settings.provider) return;
     settings.setProvider(value);
+    // 输入框跟随切换到对应服务的 Key（未保存的 draft 丢弃）
+    setKeyDraft(settings.apiKeys[value]);
     // 当前模型在新 provider 不可用 → 回退默认模型
     const available = MODELS_BY_PROVIDER[value].filter((m) => m.enabled).map((m) => m.id);
     if (!available.includes(settings.model)) settings.setModel('deepseek-v4-flash');
@@ -148,7 +150,9 @@ export function SettingsPage({
                 ))}
               </div>
               <p className="text-xs text-text-dim leading-relaxed">
-                Key 仅保存在你的设备本地，只随请求发送至 {provider.baseUrl}，不经过任何第三方服务器。
+                每个服务保存各自的 Key，切换后自动跟随。Key 仅保存在你的设备本地，只随请求发送至{' '}
+                {provider.baseUrl}
+                ，不经过任何第三方服务器。
               </p>
             </section>
 

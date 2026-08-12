@@ -16,7 +16,7 @@ export default function App() {
   const newConversation = useChat((s) => s.newConversation);
   const error = useChat((s) => s.error);
   const clearError = useChat((s) => s.clearError);
-  const apiKey = useSettings((s) => s.apiKey);
+  const apiKey = useSettings((s) => s.apiKeys[s.provider]);
   const setApiKey = useSettings((s) => s.setApiKey);
   const theme = useSettings((s) => s.theme);
   const model = useSettings((s) => s.model);

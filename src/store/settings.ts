@@ -101,7 +101,8 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
 ];
 
 interface SettingsState {
-  apiKey: string;
+  /** 各 API 服务的 Key 分开保存（切换服务自动跟随） */
+  apiKeys: Record<Provider, string>;
   provider: Provider;
   model: string;
   reasoningEffort: ReasoningEffort;
@@ -110,6 +111,7 @@ interface SettingsState {
   theme: Theme;
   promptTemplates: PromptTemplate[];
   defaultTemplateId: string | null;
+  /** 写入当前 provider 对应的 Key */
   setApiKey: (key: string) => void;
   setProvider: (provider: Provider) => void;
   setModel: (model: string) => void;
@@ -124,7 +126,7 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      apiKey: '',
+      apiKeys: { deepseek: '', 'opencode-go': '' },
       provider: 'deepseek',
       model: DEFAULT_MODEL,
       reasoningEffort: 'max',
@@ -133,7 +135,8 @@ export const useSettings = create<SettingsState>()(
       theme: 'auto',
       promptTemplates: DEFAULT_TEMPLATES,
       defaultTemplateId: null,
-      setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
+      setApiKey: (key) =>
+        set((s) => ({ apiKeys: { ...s.apiKeys, [s.provider]: key.trim() } })),
       setProvider: (provider) => set({ provider }),
       setModel: (model) => set({ model }),
       setReasoningEffort: (reasoningEffort) => set({ reasoningEffort }),
@@ -145,10 +148,18 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'ds-chat-settings',
-      version: 1,
+      version: 2,
+      // v1→v2：单一 apiKey 迁移为按 provider 分仓（历史 Key 均为 DeepSeek 官方）；
       // v0 曾使用 medium 档位（非官方档位），迁移为默认 high；旧存档无 provider 字段 → 默认 deepseek
-      migrate: (state) => {
-        const s = state as Partial<SettingsState>;
+      migrate: (state, version) => {
+        const s = state as Partial<SettingsState> & { apiKey?: string };
+        if (version < 2) {
+          s.apiKeys = { deepseek: s.apiKey ?? '', 'opencode-go': '' };
+          delete s.apiKey;
+        }
+        if (!s.apiKeys || typeof s.apiKeys !== 'object') {
+          s.apiKeys = { deepseek: '', 'opencode-go': '' };
+        }
         if (s.reasoningEffort && !['none', 'low', 'high', 'max'].includes(s.reasoningEffort)) {
           s.reasoningEffort = 'high';
         }
