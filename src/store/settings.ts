@@ -14,7 +14,7 @@ export interface ModelOption {
 }
 
 /** API 服务商：决定端点、可用模型与费用展示 */
-export type Provider = 'deepseek' | 'opencode-go' | 'custom';
+export type Provider = 'deepseek' | 'opencode' | 'custom';
 
 export interface ProviderOption {
   value: Provider;
@@ -32,10 +32,10 @@ export const PROVIDERS: ProviderOption[] = [
     baseUrl: 'https://api.deepseek.com',
   },
   {
-    value: 'opencode-go',
-    label: 'OpenCode Go',
-    hint: 'opencode.ai/zen/go/v1（不支持浏览器直连，需自建代理）',
-    baseUrl: 'https://opencode.ai/zen/go/v1',
+    value: 'opencode',
+    label: 'OpenCode',
+    hint: 'opencode-go-proxy.8972052852972.workers.dev（自建代理转发）',
+    baseUrl: 'https://opencode-go-proxy.8972052852972.workers.dev',
   },
   {
     value: 'custom',
@@ -82,8 +82,8 @@ const OPENCODE_GO_MODELS: ModelOption[] = [
 
 export const MODELS_BY_PROVIDER: Record<Provider, ModelOption[]> = {
   deepseek: DEEPSEEK_MODELS,
-  'opencode-go': OPENCODE_GO_MODELS,
-  // 自建代理：按 OpenCode Go 模型表（常见场景是转发 OpenCode Go）
+  // OpenCode（走自建代理）与自建代理：均按 OpenCode Go 模型表
+  opencode: OPENCODE_GO_MODELS,
   custom: OPENCODE_GO_MODELS,
 };
 
@@ -138,7 +138,7 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      apiKeys: { deepseek: '', 'opencode-go': '', custom: '' },
+      apiKeys: { deepseek: '', opencode: '', custom: '' },
       provider: 'deepseek',
       customBaseUrl: '',
       model: DEFAULT_MODEL,
@@ -162,24 +162,36 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: 'ds-chat-settings',
-      version: 2,
-      // v1→v2：单一 apiKey 迁移为按 provider 分仓（历史 Key 均为 DeepSeek 官方）；
-      // v0 曾使用 medium 档位（非官方档位），迁移为默认 high；旧存档无 provider 字段 → 默认 deepseek
+      version: 3,
+      // v3：'opencode-go' provider 更名为 'opencode'（直连 opencode.ai 无 CORS，改为指向自建代理端点）；
+      // v2：单一 apiKey 迁移为按 provider 分仓；v0 的 medium 档位迁移为 high
       migrate: (state, version) => {
         const s = state as Partial<SettingsState> & { apiKey?: string };
         if (version < 2) {
-          s.apiKeys = { deepseek: s.apiKey ?? '', 'opencode-go': '', custom: '' };
+          // 旧单一 apiKey → deepseek 槽位；'opencode-go' 旧 provider/key 迁移到 'opencode'
+          const oldKeys = s.apiKeys as Partial<Record<string, string>> | undefined;
+          s.apiKeys = {
+            deepseek: s.apiKey ?? oldKeys?.deepseek ?? '',
+            opencode: oldKeys?.['opencode-go'] ?? '',
+            custom: oldKeys?.custom ?? '',
+          };
           delete s.apiKey;
         }
+        // 旧存档（v1/v2）的 provider 可能是 'opencode-go'，迁移到 'opencode'
+        if ((s as { provider?: string }).provider === 'opencode-go') s.provider = 'opencode';
         if (!s.apiKeys || typeof s.apiKeys !== 'object') {
-          s.apiKeys = { deepseek: '', 'opencode-go': '', custom: '' };
+          s.apiKeys = { deepseek: '', opencode: '', custom: '' };
+        }
+        if (!s.apiKeys.opencode) {
+          // v2 存档可能仍带 'opencode-go' 槽位
+          s.apiKeys.opencode = (s.apiKeys as Record<string, string>)['opencode-go'] ?? '';
         }
         if (!s.apiKeys.custom) s.apiKeys.custom = '';
         if (!s.customBaseUrl) s.customBaseUrl = '';
         if (s.reasoningEffort && !['none', 'low', 'high', 'max'].includes(s.reasoningEffort)) {
           s.reasoningEffort = 'high';
         }
-        if (!s.provider || !['deepseek', 'opencode-go', 'custom'].includes(s.provider)) {
+        if (!s.provider || !['deepseek', 'opencode', 'custom'].includes(s.provider)) {
           s.provider = 'deepseek';
         }
         return s as SettingsState;

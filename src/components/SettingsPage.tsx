@@ -149,12 +149,6 @@ export function SettingsPage({
                   </button>
                 ))}
               </div>
-              {settings.provider === 'opencode-go' && (
-                <p className="text-xs text-amber-400 leading-relaxed">
-                  OpenCode Go 端点未配置浏览器 CORS，无法直连。请选择「自建代理」并部署转发
-                  Worker（模板见项目 examples/opencode-go-proxy.js）。
-                </p>
-              )}
               {settings.provider === 'custom' && (
                 <input
                   value={settings.customBaseUrl}

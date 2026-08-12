@@ -8,7 +8,8 @@
 
 - **BYOK 纯前端**：填入自己的 API Key，浏览器直连所选服务，零后端、无中间服务器
   - **DeepSeek 官方**：直连 `api.deepseek.com`
-  - **OpenCode Go**：`opencode.ai` 端点未配置浏览器 CORS，需通过「自建代理」使用（模板见 `examples/opencode-go-proxy.js`，如 Cloudflare Worker）
+  - **OpenCode**：通过自建 Cloudflare Worker 代理转发（`opencode.ai` 端点未配置浏览器 CORS，模板见 `examples/opencode-go-proxy.js`）
+  - **自建代理**：任意自定义端点
   - 各服务的 Key 独立保存，切换服务自动跟随
 - **流式输出**：基于 Responses API 的 SSE 流式渲染，Streamdown 处理未闭合 Markdown
 - **思维链**：可折叠展示模型推理过程，思考强度可调（none / low / high / max）
