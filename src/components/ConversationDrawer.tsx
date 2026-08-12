@@ -26,7 +26,6 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
   const conversations = useChat((s) => s.conversations);
   const activeConvId = useChat((s) => s.activeConvId);
   const selectConversation = useChat((s) => s.selectConversation);
-  const newConversation = useChat((s) => s.newConversation);
   const removeConversation = useChat((s) => s.removeConversation);
   const renameConversation = useChat((s) => s.renameConversation);
 
@@ -94,13 +93,6 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
         />
         <div className="h-14 px-4 flex items-center justify-between border-b border-border">
           <span className="font-semibold">会话</span>
-          <button
-            type="button"
-            onClick={() => void newConversation()}
-            className="text-sm text-accent px-2 py-1 rounded-lg active:bg-accent/10"
-          >
-            + 新对话
-          </button>
         </div>
         <div className="flex-1 overflow-y-auto py-2">
           {(['今天', '昨天', '本周', '更早'] as const).map((group) => {
