@@ -16,8 +16,7 @@ export function ModelPicker() {
   const setModel = useSettings((s) => s.setModel);
 
   const models = MODELS_BY_PROVIDER[provider];
-  const current = models.find((m) => m.id === model);
-  const shortLabel = current?.label.replace('DeepSeek ', '') ?? model;
+  const providerLabel = PROVIDERS.find((p) => p.value === provider)?.label ?? provider;
 
   const openMenu = () => {
     const rect = btnRef.current?.getBoundingClientRect();
@@ -47,7 +46,7 @@ export function ModelPicker() {
           <path d="M5.5 7l1.5 1.5L10 5.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M6 13h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>
-        {shortLabel}
+        {providerLabel}
       </button>
       {open && (
         <Popover pos={pos} widthClass="w-64" onClose={() => setOpen(false)}>
