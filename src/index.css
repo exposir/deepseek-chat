@@ -256,6 +256,14 @@ body {
   margin: 1em 0;
 }
 
+/* 隐藏横向滚动条（输入区工具行在窄屏可横向滑动） */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* 思维链区块的浅色小字 */
 .reasoning-text {
   color: var(--color-text-dim);

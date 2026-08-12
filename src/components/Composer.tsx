@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useChat } from '../store/chat';
 import { useSettings, type PromptTemplate } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
+import { ModelPicker } from './ModelPicker';
 
 export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [text, setText] = useState('');
@@ -84,7 +85,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   return (
     <div className="safe-bottom absolute bottom-0 inset-x-0 z-20 border-t border-border bg-panel/80 backdrop-blur-2xl px-3 pt-2">
       <div className="mx-auto max-w-2xl md:max-w-5xl">
-        <div className="flex items-center gap-2 pb-1.5">
+        <div className="flex items-center gap-2 pb-1.5 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setSearchEnabled(!searchEnabled)}
@@ -105,6 +106,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
             联网搜索{searchEnabled ? '已开' : '已关'}
           </button>
           <EffortPicker />
+          <ModelPicker />
           <div className="relative" ref={tplBtnRef}>
             <button
               type="button"
