@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { useSettings } from './store/settings';
 import { consumeUrlApiKey } from './utils/urlKey';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 
 // 首帧前同步主题，避免闪屏（zustand persist 存储于 localStorage）
@@ -21,6 +22,8 @@ if (urlKey) useSettings.getState().setApiKey(urlKey);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

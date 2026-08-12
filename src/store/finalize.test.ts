@@ -20,6 +20,7 @@ describe('finalizeStreamBlocks 流式收尾', () => {
     const records = finalizeStreamBlocks({
       convId: 'c1',
       startSeq: 3,
+      createdAt: 1000,
       blocks: [
         {
           key: 'w1',
@@ -49,6 +50,7 @@ describe('finalizeStreamBlocks 流式收尾', () => {
     const records = finalizeStreamBlocks({
       convId: 'c1',
       startSeq: 0,
+      createdAt: 1000,
       blocks: [reasoning(''), message(''), reasoning('想了'), message('说了')],
     });
     expect(records).toHaveLength(2);
@@ -61,6 +63,7 @@ describe('finalizeStreamBlocks 流式收尾', () => {
     const records = finalizeStreamBlocks({
       convId: 'c1',
       startSeq: 0,
+      createdAt: 1000,
       blocks: [
         {
           key: 'w1',
@@ -84,6 +87,7 @@ describe('finalizeStreamBlocks 流式收尾', () => {
     const records = finalizeStreamBlocks({
       convId: 'c1',
       startSeq: 0,
+      createdAt: 1000,
       blocks: [reasoning('r'), message('m'), reasoning('')],
       usage: { input_tokens: 10, output_tokens: 5 },
       interrupted: true,
@@ -99,6 +103,6 @@ describe('finalizeStreamBlocks 流式收尾', () => {
   });
 
   it('空块列表返回空数组（未生成任何内容）', () => {
-    expect(finalizeStreamBlocks({ convId: 'c1', startSeq: 5, blocks: [] })).toEqual([]);
+    expect(finalizeStreamBlocks({ convId: 'c1', startSeq: 5, createdAt: 1000, blocks: [] })).toEqual([]);
   });
 });

@@ -7,6 +7,8 @@ export interface FinalizeParams {
   /** 起始序号（nextSeq 结果），后续连续分配 */
   startSeq: number;
   blocks: StreamBlock[];
+  /** 记录写入时间（所有块同一时间戳） */
+  createdAt: number;
   usage?: Usage;
   interrupted?: boolean;
   failed?: string | null;
@@ -24,7 +26,7 @@ export function finalizeStreamBlocks(p: FinalizeParams): ItemRecord[] {
   let seq = p.startSeq;
 
   const push = (item: ResponseItem) => {
-    records.push({ convId: p.convId, seq: seq++, item });
+    records.push({ convId: p.convId, seq: seq++, item, createdAt: p.createdAt });
   };
 
   for (const b of p.blocks) {

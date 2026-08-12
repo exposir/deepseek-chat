@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useChat } from './store/chat';
 import { useKeyboardOffset } from './hooks/useKeyboardOffset';
 import { consumeUrlApiKey } from './utils/urlKey';
@@ -26,6 +27,11 @@ export default function App() {
   const [keyNotice, setKeyNotice] = useState(false);
   // iOS 软键盘弹出时压缩 app-shell 高度，输入区随之浮到键盘上方（见 useKeyboardOffset）
   const kbOffset = useKeyboardOffset();
+  // PWA：新版本就绪时提示刷新（prompt 模式，不静默更新）
+  const {
+    needRefresh: [pwaNeedRefresh, setPwaNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
 
   // 关闭设置：先播退出动画再卸载
   const closeSettings = () => {
@@ -156,6 +162,30 @@ export default function App() {
           style={{ top: 'var(--header-h)' }}
         >
           已通过链接设置 API Key
+        </div>
+      )}
+
+      {pwaNeedRefresh && (
+        <div
+          className="absolute inset-x-0 z-10 flex items-center gap-2 px-4 py-2 bg-accent/10 border-b border-accent/30 text-sm text-accent backdrop-blur-xl"
+          style={{ top: 'var(--header-h)' }}
+        >
+          <span className="flex-1">发现新版本</span>
+          <button
+            type="button"
+            className="text-xs px-2.5 py-1 rounded-lg border border-accent/40 font-medium"
+            onClick={() => void updateServiceWorker(true)}
+          >
+            立即更新
+          </button>
+          <button
+            type="button"
+            onClick={() => setPwaNeedRefresh(false)}
+            className="p-1 text-accent/60"
+            aria-label="忽略"
+          >
+            ✕
+          </button>
         </div>
       )}
 

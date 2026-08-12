@@ -5,7 +5,7 @@ import { extractText } from '../api/responses';
 import { MarkdownContent } from './MarkdownContent';
 import { ReasoningBlock } from './ReasoningBlock';
 import { SearchCallBadge } from './SearchCallBadge';
-import { formatTokens, formatCost } from '../utils/format';
+import { formatTokens, formatCost, formatTime } from '../utils/format';
 import { MODELS_BY_PROVIDER, useSettings } from '../store/settings';
 import { useChat } from '../store/chat';
 
@@ -73,31 +73,14 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-/** 用户消息下方的操作：复制 + 编辑（编辑=截断后续并载回输入框） */
-function UserMessageActions({ record, text }: { record: ItemRecord; text: string }) {
-  const editMessage = useChat((s) => s.editMessage);
-  const isStreaming = useChat((s) => s.isStreaming);
-
-  return (
-    <div className="flex justify-end gap-1">
-      <CopyButton text={text} />
-      <button
-        type="button"
-        onClick={() => void editMessage(record.convId, record.seq, text)}
-        disabled={isStreaming}
-        aria-label="编辑"
-        className="p-1.5 md:p-2 rounded-lg text-text-dim/70 active:bg-panel-2 disabled:opacity-40 hover:bg-panel-2"
-      >
-        <svg className="w-3.5 h-3.5 md:w-4 md:h-4" viewBox="0 0 16 16" fill="none">
-          <path d="M11.3 2.3a1.4 1.4 0 0 1 2 2L5.5 12l-3 .8.8-3 8-7.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-/** 失败/中断回合的重试按钮：找到该轮用户消息，截断后重新发送 */
-function RetryButton({ record }: { record: ItemRecord }) {
+/** 失败/中断回合的重试，与正常回复的重新生成共用：找到该轮用户消息，截断后重新发送 */
+function RetryButton({
+  record,
+  label = '重试',
+}: {
+  record: ItemRecord;
+  label?: string;
+}) {
   const items = useChat((s) => s.items);
   const retry = useChat((s) => s.retry);
   const isStreaming = useChat((s) => s.isStreaming);
@@ -133,14 +116,22 @@ function RetryButton({ record }: { record: ItemRecord }) {
           strokeLinejoin="round"
         />
       </svg>
-      重试
+      {label}
     </button>
   );
 }
 
-/** 已落库 item 的渲染：按类型分发 */
-export const MessageItemView = memo(function MessageItemView({ record }: { record: ItemRecord }) {
+/** 已落库 item 的渲染：按类型分发；isLastInConv 用于末条消息显示「重新生成」 */
+export const MessageItemView = memo(function MessageItemView({
+  record,
+  isLastInConv = false,
+}: {
+  record: ItemRecord;
+  isLastInConv?: boolean;
+}) {
   const { item, meta } = record;
+  const editMessage = useChat((s) => s.editMessage);
+  const isStreaming = useChat((s) => s.isStreaming);
 
   if (item.type === 'message') {
     const msg = item as ApiMessageItem;
@@ -153,7 +144,27 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
               {text}
             </div>
           </div>
-          <UserMessageActions record={record} text={text} />
+          <div className="flex items-center justify-between gap-1">
+            {record.createdAt ? (
+              <span className="text-[11px] text-text-dim/50">{formatTime(record.createdAt)}</span>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-1">
+              <CopyButton text={text} />
+              <button
+                type="button"
+                onClick={() => void editMessage(record.convId, record.seq, text)}
+                disabled={isStreaming}
+                aria-label="编辑"
+                className="p-1.5 md:p-2 rounded-lg text-text-dim/70 active:bg-panel-2 disabled:opacity-40 hover:bg-panel-2"
+              >
+                <svg className="w-3.5 h-3.5 md:w-4 md:h-4" viewBox="0 0 16 16" fill="none">
+                  <path d="M11.3 2.3a1.4 1.4 0 0 1 2 2L5.5 12l-3 .8.8-3 8-7.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -178,7 +189,13 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
           ) : (
             <span />
           )}
-          <CopyButton text={text} />
+          <div className="flex items-center gap-1">
+            {record.createdAt && (
+              <span className="text-[11px] text-text-dim/50">{formatTime(record.createdAt)}</span>
+            )}
+            {isLastInConv && <RetryButton record={record} label="重新生成" />}
+            <CopyButton text={text} />
+          </div>
         </div>
       </div>
     );

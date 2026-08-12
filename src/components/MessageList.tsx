@@ -105,8 +105,8 @@ export function MessageList() {
           </div>
         ) : (
           <div className="mx-auto max-w-2xl md:max-w-5xl space-y-4 md:space-y-6 pb-2">
-            {items.map((r) => (
-              <MessageItemView key={`${r.convId}-${r.seq}`} record={r} />
+            {items.map((r, i) => (
+              <MessageItemView key={`${r.convId}-${r.seq}`} record={r} isLastInConv={i === items.length - 1} />
             ))}
             {streamBlocks.map((b, i) => (
               <StreamBlockView key={b.key} block={b} isLast={i === streamBlocks.length - 1} />

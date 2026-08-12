@@ -5,6 +5,17 @@ import { EffortPicker } from './EffortPicker';
 import { ModelPicker } from './ModelPicker';
 import { Popover, menuPosition, type MenuPos } from './Popover';
 
+/** 按会话保存输入框草稿（localStorage 持久化，切换会话不丢） */
+const DRAFTS_KEY = 'ds-composer-drafts';
+
+function loadDrafts(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '{}') as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
 export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -25,6 +36,43 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [tplOpen, setTplOpen] = useState(false);
   const [tplPos, setTplPos] = useState<MenuPos | null>(null);
   const tplBtnRef = useRef<HTMLDivElement>(null);
+
+  // —— 按会话草稿：切换会话时保存旧文本、载入新会话草稿 ——
+  const activeConvId = useChat((s) => s.activeConvId);
+  const draftsRef = useRef<Record<string, string>>(loadDrafts());
+  const textRef = useRef('');
+  textRef.current = text;
+  const prevConvRef = useRef(activeConvId);
+
+  useEffect(() => {
+    const prev = prevConvRef.current;
+    const next = activeConvId;
+    if (prev !== next) {
+      // 保存旧会话草稿
+      draftsRef.current[prev ?? ''] = textRef.current;
+      persistDrafts();
+      // 载入新会话草稿
+      const restored = next ? (draftsRef.current[next] ?? '') : '';
+      setText(restored);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (el) {
+          el.style.height = 'auto';
+          el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+        }
+      });
+      prevConvRef.current = next;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConvId]);
+
+  const persistDrafts = () => {
+    try {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(draftsRef.current));
+    } catch {
+      // 忽略持久化失败
+    }
+  };
 
   const openTpl = () => {
     const rect = tplBtnRef.current?.getBoundingClientRect();
@@ -68,6 +116,9 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
       return;
     }
     setText('');
+    // 发送后清空当前会话草稿
+    draftsRef.current[activeConvId ?? ''] = '';
+    persistDrafts();
     // 重置高度
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     void send(trimmed);

@@ -16,6 +16,8 @@ export interface ItemRecord {
   convId: string;
   seq: number; // 会话内顺序号
   item: ResponseItem;
+  /** 消息写入时间（UI 时间戳展示；历史记录无此字段则不显示） */
+  createdAt?: number;
   /** 附加元数据（仅 assistant 轮末尾 message 携带 usage；失败标记等） */
   meta?: {
     usage?: Usage;

@@ -248,7 +248,12 @@ export const useChat = create<ChatState>()((set, get) => ({
 
     // 用户消息立即落库并上屏
     const userItem: MessageItem = { type: 'message', role: 'user', content: trimmed };
-    const userRecord: ItemRecord = { convId, seq: await nextSeq(convId), item: userItem };
+    const userRecord: ItemRecord = {
+      convId,
+      seq: await nextSeq(convId),
+      item: userItem,
+      createdAt: Date.now(),
+    };
     await appendItem(userRecord);
     const isFirstMessage = get().items.length === 0;
     if (isFirstMessage) {
@@ -376,6 +381,7 @@ export const useChat = create<ChatState>()((set, get) => ({
       convId,
       startSeq,
       blocks,
+      createdAt: Date.now(),
       usage,
       interrupted,
       failed,
