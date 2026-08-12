@@ -167,9 +167,15 @@ body {
   overscroll-behavior: none;
 }
 
-/* 动态视口 + iOS 安全区（flex 布局用 Tailwind 类，便于 md:flex-row 覆盖） */
+/* 动态视口 + iOS 安全区：fixed 锁定视口（不依赖 dvh/inset 速记，老浏览器 height:100dvh 失效会导致
+   文档被内容撑高、body 滚动、header/composer 跟着跑；fixed+四边 0 则任何环境都精确等于视口）。
+   软键盘弹出时 App.tsx 通过内联 height 压缩 shell（top:0+height 生效时 bottom:0 被忽略）。 */
 .app-shell {
-  height: 100dvh;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   padding-top: env(safe-area-inset-top);
 }
 
