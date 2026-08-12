@@ -314,6 +314,12 @@ body {
   animation: msg-in 0.25s ease-out;
 }
 
+/* 长会话性能：消息条目离屏渲染跳过（contain 配合动画在可视区外不渲染） */
+.cv-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+}
+
 /* 链接设置 Key 提示：停留后淡出（3s 内前 70% 保持，后 30% 淡出，与 JS 移除时机同步） */
 @keyframes notice-fade {
   0%,

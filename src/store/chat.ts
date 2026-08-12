@@ -10,6 +10,7 @@ import {
 import type { MessageItem, ResponseItem, Usage } from '../api/types';
 import {
   appendItem,
+  bulkAddItems,
   createConversation,
   deleteConversation,
   listConversations,
@@ -23,6 +24,7 @@ import {
 } from '../db';
 import { useSettings } from './settings';
 import { truncateTitle } from '../utils/format';
+import { finalizeStreamBlocks } from './finalize';
 
 /** 流式过程中的临时输出块（完成后转为 ItemRecord 落库） */
 export interface StreamBlock {
@@ -64,6 +66,8 @@ interface ChatState {
 }
 
 let abortController: AbortController | null = null;
+// 标题生成请求控制器：切换会话时取消（避免给旧会话花冤枉钱）
+let titleAbort: AbortController | null = null;
 // StrictMode 下 effect 双调用守卫：init 全局只执行一次
 let initPromise: Promise<void> | null = null;
 
@@ -74,6 +78,16 @@ const isDesktopViewport = () =>
 // —— rAF 节流缓冲：delta 先积累在模块级 Map，帧回调统一 flush，避免逐 token 重渲染 ——
 const pendingDeltas = new Map<string, string>();
 let flushScheduled = false;
+let flushRafId = 0;
+
+/** 取消已排队的 rAF flush（收尾时改用同步合并，避免竞态） */
+function cancelScheduledFlush() {
+  if (flushRafId) {
+    cancelAnimationFrame(flushRafId);
+    flushRafId = 0;
+  }
+  flushScheduled = false;
+}
 
 function scheduleFlush(set: (fn: (s: ChatState) => Partial<ChatState>) => void) {
   if (flushScheduled) return;
@@ -82,8 +96,9 @@ function scheduleFlush(set: (fn: (s: ChatState) => Partial<ChatState>) => void) 
     typeof requestAnimationFrame === 'function'
       ? requestAnimationFrame
       : (cb: () => void) => setTimeout(cb, 32);
-  raf(() => {
+  flushRafId = raf(() => {
     flushScheduled = false;
+    flushRafId = 0;
     if (pendingDeltas.size === 0) return;
     const deltas = new Map(pendingDeltas);
     pendingDeltas.clear();
@@ -129,6 +144,7 @@ function errorMessage(err: unknown): string {
     }
   }
   if (err instanceof TypeError) return '网络连接失败，请检查网络后重试';
+  if (err instanceof DOMException && err.name === 'TimeoutError') return '请求超时，请稍后重试';
   return err instanceof Error ? err.message : '未知错误';
 }
 
@@ -161,6 +177,10 @@ export const useChat = create<ChatState>()((set, get) => ({
   },
 
   selectConversation: async (id) => {
+    // 流式中切会话：终止旧流（收尾逻辑会落库到旧会话，UI 侧校验 activeConvId 不污染新会话）；
+    // 同时取消挂起的标题生成
+    if (get().isStreaming) abortController?.abort();
+    titleAbort?.abort();
     const items = await listItems(id);
     // 桌面 sidebar 常驻，切会话不关闭；移动端关闭抽屉
     const apply = () =>
@@ -259,6 +279,7 @@ export const useChat = create<ChatState>()((set, get) => ({
           onItemAdded: (item) => {
             if (item.type !== 'reasoning' && item.type !== 'message' && item.type !== 'web_search_call')
               return;
+            if (get().activeConvId !== convId) return;
             const block: StreamBlock = {
               key: nextBlockKey(),
               itemId: item.id,
@@ -273,6 +294,7 @@ export const useChat = create<ChatState>()((set, get) => ({
             set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
           },
           onItemDone: (item) => {
+            if (get().activeConvId !== convId) return;
             const itemId = item.type === 'function_call_output' ? undefined : item.id;
             set((s) => ({
               streamBlocks: s.streamBlocks.map((b) => {
@@ -291,18 +313,21 @@ export const useChat = create<ChatState>()((set, get) => ({
             }));
           },
           onReasoningDelta: (delta, itemId) => {
+            if (get().activeConvId !== convId) return;
             const key = targetKey(get().streamBlocks, 'reasoning', itemId);
             if (!key) return;
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
             scheduleFlush(set);
           },
           onTextDelta: (delta, itemId) => {
+            if (get().activeConvId !== convId) return;
             const key = targetKey(get().streamBlocks, 'message', itemId);
             if (!key) return;
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
             scheduleFlush(set);
           },
           onWebSearchStatus: (status, itemId, item) => {
+            if (get().activeConvId !== convId) return;
             set((s) => ({
               streamBlocks: s.streamBlocks.map((b) =>
                 (itemId && b.itemId === itemId) ||
@@ -335,51 +360,38 @@ export const useChat = create<ChatState>()((set, get) => ({
     }
 
     // 收尾：把流式块转为持久化 item（无论正常/停止/失败，保留已生成内容）
-    flushScheduled = false;
+    cancelScheduledFlush();
     const remaining = new Map(pendingDeltas);
     pendingDeltas.clear();
     const blocks = get().streamBlocks.map((b) =>
       remaining.has(b.key) ? { ...b, text: b.text + remaining.get(b.key)! } : b,
     );
     const interrupted = signal.aborted;
-    const newRecords: ItemRecord[] = [];
-    let seq = await nextSeq(convId);
-    for (let i = 0; i < blocks.length; i++) {
-      const b = blocks[i];
-      let item: ResponseItem;
-      if (b.finalItem) {
-        item = b.finalItem;
-      } else if (b.type === 'reasoning') {
-        if (!b.text) continue;
-        item = { type: 'reasoning', id: b.itemId, content: [{ type: 'reasoning_text', text: b.text }] };
-      } else if (b.type === 'message') {
-        if (!b.text) continue;
-        item = { type: 'message', role: 'assistant', id: b.itemId, content: b.text };
-      } else {
-        // 未完成的 web_search_call：落库保留展示，回传时由 buildInputItems 过滤
-        item = { type: 'web_search_call', id: b.itemId, status: b.searchStatus ?? 'in_progress', action: b.action };
-      }
-      const isLast = i === blocks.length - 1;
-      const record: ItemRecord = {
-        convId,
-        seq: seq++,
-        item,
-        meta:
-          isLast && (usage || interrupted || failed)
-            ? { usage, interrupted: interrupted || undefined, error: failed ?? undefined }
-            : undefined,
-      };
-      await appendItem(record);
-      newRecords.push(record);
-    }
+    const startSeq = await nextSeq(convId);
+    const newRecords = finalizeStreamBlocks({
+      convId,
+      startSeq,
+      blocks,
+      usage,
+      interrupted,
+      failed,
+    });
+    // 落库始终写旧会话（convId 闭包）；UI 仅在仍停留该会话时更新，避免污染新会话
+    await bulkAddItems(newRecords);
     await touchConversation(convId);
     abortController = null;
-    set((s) => ({
-      items: [...s.items, ...newRecords],
-      streamBlocks: [],
-      isStreaming: false,
-      error: failed,
-    }));
+    const stillActive = get().activeConvId === convId;
+    if (stillActive) {
+      set((s) => ({
+        items: [...s.items, ...newRecords],
+        streamBlocks: [],
+        isStreaming: false,
+        error: failed,
+      }));
+    } else {
+      // 已切走：释放全局流式锁即可（新会话的 items/streamBlocks 保持其自身状态）
+      set({ isStreaming: false });
+    }
 
     // 标题自动演进：首轮 + 每 5 轮，未手动改名时，用旧标题 + 最近 2 轮对话生成
     const userCount = get().items.filter(
@@ -387,6 +399,7 @@ export const useChat = create<ChatState>()((set, get) => ({
     ).length;
     const conv = get().conversations.find((c) => c.id === convId);
     if (settings.apiKeys[settings.provider] && conv && !conv.titleCustom && (userCount === 1 || userCount % 5 === 0)) {
+      titleAbort = new AbortController();
       const context =
         userCount === 1
           ? trimmed
@@ -405,6 +418,7 @@ export const useChat = create<ChatState>()((set, get) => ({
         model: settings.model,
         context,
         previousTitle: conv.title,
+        signal: titleAbort?.signal,
       });
       if (title && get().conversations.some((c) => c.id === convId)) {
         await touchConversation(convId, title);
@@ -412,6 +426,7 @@ export const useChat = create<ChatState>()((set, get) => ({
           conversations: s.conversations.map((c) => (c.id === convId ? { ...c, title } : c)),
         }));
       }
+      titleAbort = null;
     }
   },
 
@@ -455,12 +470,3 @@ export const useChat = create<ChatState>()((set, get) => ({
   clearError: () => set({ error: null }),
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),
 }));
-
-/** 供重发场景使用：取会话中最后一条用户消息文本 */
-export function lastUserText(items: ItemRecord[]): string | null {
-  for (let i = items.length - 1; i >= 0; i--) {
-    const it = items[i].item;
-    if (it.type === 'message' && it.role === 'user') return extractText(it);
-  }
-  return null;
-}

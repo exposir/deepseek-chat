@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useSettings } from '../store/settings';
 import type { ReasoningEffort } from '../api/types';
+import { Popover, menuPosition, type MenuPos } from './Popover';
 
 export const EFFORTS: { value: ReasoningEffort; label: string; hint: string }[] = [
   { value: 'none', label: 'none', hint: '不思考，最快' },
@@ -15,14 +15,14 @@ export function EffortPicker() {
   const effort = useSettings((s) => s.reasoningEffort);
   const setEffort = useSettings((s) => s.setReasoningEffort);
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
+  const [pos, setPos] = useState<MenuPos | null>(null);
   const btnRef = useRef<HTMLDivElement>(null);
   const current = EFFORTS.find((e) => e.value === effort) ?? EFFORTS[2];
 
   const openMenu = () => {
     const rect = btnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPos({ left: Math.round(rect.left), bottom: Math.round(window.innerHeight - rect.top + 6) });
+    setPos(menuPosition(rect, 176, window.innerWidth, window.innerHeight));
     setOpen(true);
   };
 
@@ -47,49 +47,40 @@ export function EffortPicker() {
         </svg>
         思考 {current.label}
       </button>
-      {open &&
-        pos &&
-        // 菜单与遮罩都 portal：backdrop-blur 截断 fixed + 菜单被 body 层遮罩盖住（同 Composer 指令菜单）
-        createPortal(
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <div
-              className="fixed z-50 w-44 rounded-xl border border-border bg-panel-2 p-1 shadow-xl"
-              style={{ left: pos.left, bottom: pos.bottom }}
+      {open && (
+        <Popover pos={pos} widthClass="w-44" onClose={() => setOpen(false)}>
+          {EFFORTS.map((e) => (
+            <button
+              key={e.value}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setEffort(e.value);
+                setOpen(false);
+              }}
+              className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
+                effort === e.value ? 'text-accent' : 'text-text'
+              }`}
             >
-              {EFFORTS.map((e) => (
-                <button
-                  key={e.value}
-                  type="button"
-                  onClick={() => {
-                    setEffort(e.value);
-                    setOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
-                    effort === e.value ? 'text-accent' : 'text-text'
-                  }`}
-                >
-                  <span>
-                    <span className="text-xs font-medium">{e.label}</span>
-                    <span className="block text-[11px] text-text-dim">{e.hint}</span>
-                  </span>
-                  {effort === e.value && (
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M3 8.5l3.5 3.5L13 5"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
-          </>,
-          document.body,
-        )}
+              <span>
+                <span className="text-xs font-medium">{e.label}</span>
+                <span className="block text-[11px] text-text-dim">{e.hint}</span>
+              </span>
+              {effort === e.value && (
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8.5l3.5 3.5L13 5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          ))}
+        </Popover>
+      )}
     </div>
   );
 }

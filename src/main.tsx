@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { useSettings } from './store/settings';
+import { consumeUrlApiKey } from './utils/urlKey';
 import './index.css';
 
 // 首帧前同步主题，避免闪屏（zustand persist 存储于 localStorage）
@@ -14,8 +15,8 @@ try {
   // 忽略解析失败
 }
 
-// URL ?apiKey=xxx：同步写入 settings，保证首帧 key 已生效（幂等，重复解析无害）
-const urlKey = new URLSearchParams(window.location.search).get('apiKey')?.trim();
+// URL ?apiKey=xxx：同步写入 settings，保证首帧 key 已生效（consumeUrlApiKey 幂等并立即清理地址栏）
+const urlKey = consumeUrlApiKey();
 if (urlKey) useSettings.getState().setApiKey(urlKey);
 
 createRoot(document.getElementById('root')!).render(

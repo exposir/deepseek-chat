@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useChat } from '../store/chat';
 import { useSettings, type PromptTemplate } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
 import { ModelPicker } from './ModelPicker';
+import { Popover, menuPosition, type MenuPos } from './Popover';
 
 export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const [text, setText] = useState('');
@@ -18,20 +18,13 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const apiKey = useSettings((s) => s.apiKeys[s.provider]);
   const promptTemplates = useSettings((s) => s.promptTemplates);
   const [tplOpen, setTplOpen] = useState(false);
-  const [tplPos, setTplPos] = useState<{ left: number; bottom: number } | null>(null);
+  const [tplPos, setTplPos] = useState<MenuPos | null>(null);
   const tplBtnRef = useRef<HTMLDivElement>(null);
 
   const openTpl = () => {
     const rect = tplBtnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    // 菜单 192px 宽：右对齐按钮并 clamp 在视口内（按钮靠右时直接 left 定位会溢出屏幕）
-    const MENU_W = 192;
-    const MARGIN = 8;
-    const left = Math.min(
-      Math.max(rect.right - MENU_W, MARGIN),
-      window.innerWidth - MENU_W - MARGIN,
-    );
-    setTplPos({ left: Math.round(left), bottom: Math.round(window.innerHeight - rect.top + 6) });
+    setTplPos(menuPosition(rect, 192, window.innerWidth, window.innerHeight));
     setTplOpen(true);
   };
 
@@ -120,35 +113,24 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               </svg>
               指令
             </button>
-            {tplOpen &&
-              tplPos &&
-              // 遮罩和菜单都 portal 到 body：
-              // 1. Composer 的 backdrop-blur 会截断 fixed 定位，遮罩必须在 body
-              // 2. 菜单若留在 Composer 内（z-20 context），会被 body 层 z-40 遮罩盖住，点击失效
-              createPortal(
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setTplOpen(false)} />
-                  <div
-                    className="fixed z-50 w-48 rounded-xl border border-border bg-panel-2 p-1 shadow-xl"
-                    style={{ left: tplPos.left, bottom: tplPos.bottom }}
+            {tplOpen && (
+              <Popover pos={tplPos} widthClass="w-48" onClose={() => setTplOpen(false)}>
+                {promptTemplates.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => applyTemplate(t)}
+                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-text hover:bg-panel-2/70"
                   >
-                    {promptTemplates.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => applyTemplate(t)}
-                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-text hover:bg-panel-2/70"
-                      >
-                        <span className="text-text-dim">{t.label}</span>
-                      </button>
-                    ))}
-                    {promptTemplates.length === 0 && (
-                      <div className="px-2.5 py-2 text-xs text-text-dim/60">暂无指令，可在设置中添加</div>
-                    )}
-                  </div>
-                </>,
-                document.body,
-              )}
+                    <span className="text-text-dim">{t.label}</span>
+                  </button>
+                ))}
+                {promptTemplates.length === 0 && (
+                  <div className="px-2.5 py-2 text-xs text-text-dim/60">暂无指令，可在设置中添加</div>
+                )}
+              </Popover>
+            )}
           </div>
         </div>
         <div className="flex items-end gap-2 pb-2">

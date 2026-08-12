@@ -70,6 +70,12 @@ export async function appendItem(record: ItemRecord): Promise<void> {
   await db.items.add(record);
 }
 
+/** 批量落库（流式收尾一次写入，避免逐条 add 中途失败留下半截会话） */
+export async function bulkAddItems(records: ItemRecord[]): Promise<void> {
+  if (records.length === 0) return;
+  await db.items.bulkAdd(records);
+}
+
 /** 截断会话：删除 seq >= fromSeq 的所有 item（编辑消息回退用） */
 export async function truncateItems(convId: string, fromSeq: number): Promise<void> {
   await db.items.where('[convId+seq]').between([convId, fromSeq], [convId, Infinity]).delete();

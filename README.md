@@ -19,7 +19,10 @@
 
 ## 隐私
 
-API Key 仅保存在你的设备本地，只随请求发送至你选择的 API 服务端点（DeepSeek 官方 / 自建代理），不经过任何第三方服务器。自建代理由你自行部署，Key 从你的浏览器直达代理，再由代理转发至上游。
+API Key 仅保存在你的设备本地，只随请求发送至你选择的 API 服务端点（DeepSeek 官方 / 自建代理），不经过任何第三方服务器。
+
+- **DeepSeek 官方**：直连 `api.deepseek.com`，CSP 白名单该域名。
+- **OpenCode / 自建代理**：请求发往你填写的代理端点（如自建 Cloudflare Worker），再由代理转发上游。**你的 Key 会经过该代理**，因此请只使用自己部署或信任的代理，建议将 Worker 的 `ALLOWED_ORIGIN` 收紧为你自己的域名（模板见 `examples/opencode-go-proxy.js`）。
 
 ## 本地开发
 

@@ -147,7 +147,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
     const text = extractText(msg);
     if (msg.role === 'user') {
       return (
-        <div className="space-y-0.5 msg-in">
+        <div className="space-y-0.5 msg-in cv-item">
           <div className="flex justify-end">
             <div className="max-w-[85%] md:max-w-[60%] rounded-2xl rounded-br-md bg-accent-soft/70 px-4 py-2.5 md:py-3 text-[16px] whitespace-pre-wrap break-words">
               {text}
@@ -158,7 +158,7 @@ export const MessageItemView = memo(function MessageItemView({ record }: { recor
       );
     }
     return (
-      <div className="space-y-1.5 msg-in">
+      <div className="space-y-1.5 msg-in cv-item">
         <MarkdownContent content={text} />
         {meta?.interrupted && (
           <div className="flex items-center justify-between gap-2">

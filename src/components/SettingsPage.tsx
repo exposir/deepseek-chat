@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MODELS_BY_PROVIDER, PROVIDERS, useSettings, type PromptTemplate, type Theme } from '../store/settings';
+import { MODELS_BY_PROVIDER, PROVIDERS, useSettings, type PromptTemplate, type Theme, DEFAULT_MODEL } from '../store/settings';
 import { EFFORTS } from './EffortPicker';
 
 const THEMES: { value: Theme; label: string; hint: string }[] = [
@@ -32,7 +32,7 @@ export function SettingsPage({
     setKeyDraft(settings.apiKeys[value]);
     // 当前模型在新 provider 不可用 → 回退默认模型
     const available = MODELS_BY_PROVIDER[value].filter((m) => m.enabled).map((m) => m.id);
-    if (!available.includes(settings.model)) settings.setModel('deepseek-v4-flash');
+    if (!available.includes(settings.model)) settings.setModel(DEFAULT_MODEL);
   };
 
   const saveKey = () => {

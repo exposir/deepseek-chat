@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useChat } from '../store/chat';
 import { formatTime } from '../utils/format';
+import { ConfirmDialog, PromptDialog } from './Dialog';
 
 const SIDEBAR_MIN = 240;
 const SIDEBAR_MAX = 480;
@@ -28,6 +29,13 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
   const selectConversation = useChat((s) => s.selectConversation);
   const removeConversation = useChat((s) => s.removeConversation);
   const renameConversation = useChat((s) => s.renameConversation);
+
+  // 自制对话框状态（替代 window.confirm/prompt）
+  const [dialog, setDialog] = useState<
+    | { type: 'rename'; convId: string; title: string }
+    | { type: 'delete'; convId: string; title: string }
+    | null
+  >(null);
 
   // 桌面侧栏宽度：可拖拽调整，持久化到 localStorage
   const [width, setWidth] = useState(() => {
@@ -117,8 +125,7 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const t = window.prompt('重命名会话', c.title);
-                        if (t) void renameConversation(c.id, t);
+                        setDialog({ type: 'rename', convId: c.id, title: c.title });
                       }}
                       className="shrink-0 p-1.5 rounded-lg text-text-dim/60 hover:text-text"
                       aria-label="重命名会话"
@@ -136,7 +143,7 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm('删除该会话？')) void removeConversation(c.id);
+                        setDialog({ type: 'delete', convId: c.id, title: c.title });
                       }}
                       className="shrink-0 p-1.5 rounded-lg text-text-dim/60 active:text-red-400"
                       aria-label="删除会话"
@@ -175,6 +182,31 @@ export function ConversationDrawer({ onOpenSettings }: { onOpenSettings: () => v
           </button>
         </div>
       </aside>
+      {dialog?.type === 'rename' && (
+        <PromptDialog
+          title="重命名会话"
+          initialValue={dialog.title}
+          confirmText="重命名"
+          onCancel={() => setDialog(null)}
+          onConfirm={(t) => {
+            setDialog(null);
+            void renameConversation(dialog.convId, t);
+          }}
+        />
+      )}
+      {dialog?.type === 'delete' && (
+        <ConfirmDialog
+          title="删除会话"
+          message={`确定删除「${dialog.title}」吗？会话内的所有消息将被清除。`}
+          confirmText="删除"
+          danger
+          onCancel={() => setDialog(null)}
+          onConfirm={() => {
+            setDialog(null);
+            void removeConversation(dialog.convId);
+          }}
+        />
+      )}
     </>
   );
 }

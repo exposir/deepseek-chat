@@ -18,6 +18,17 @@ export function apiBaseUrl(provider: Provider, customBaseUrl?: string): string {
   return PROVIDERS.find((p) => p.value === provider)?.baseUrl ?? 'https://api.deepseek.com';
 }
 
+/**
+ * 给请求信号叠加超时（上游挂起时避免 UI 永远停在连接中）。
+ * AbortSignal.any 不可用的环境直接返回原信号（无超时降级）。
+ */
+function withTimeout(signal: AbortSignal, ms: number): AbortSignal {
+  if (typeof AbortSignal.any !== 'function' || typeof AbortSignal.timeout !== 'function') {
+    return signal;
+  }
+  return AbortSignal.any([signal, AbortSignal.timeout(ms)]);
+}
+
 /** 流式回调：store 层按需订阅 */
 export interface StreamCallbacks {
   /** 新输出 item 建立（reasoning / message / web_search_call） */
@@ -120,7 +131,7 @@ export async function createResponseStream(
       Authorization: `Bearer ${params.apiKey}`,
     },
     body: JSON.stringify(body),
-    signal,
+    signal: withTimeout(signal, 120_000),
   });
 
   if (!res.ok) {
@@ -217,7 +228,7 @@ export async function generateTitle(params: GenerateTitleParams): Promise<string
         reasoning: { effort: 'none' },
         max_output_tokens: 24,
       }),
-      signal: params.signal,
+      signal: withTimeout(params.signal ?? new AbortController().signal, 30_000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as ResponseObject;

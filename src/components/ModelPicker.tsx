@@ -1,8 +1,6 @@
 import { useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { MODELS_BY_PROVIDER, PROVIDERS, useSettings, type Provider } from '../store/settings';
-
-const DEFAULT_FALLBACK_MODEL = 'deepseek-v4-flash';
+import { MODELS_BY_PROVIDER, PROVIDERS, useSettings, DEFAULT_MODEL, type Provider } from '../store/settings';
+import { Popover, menuPosition, type MenuPos } from './Popover';
 
 /**
  * 输入区模型/服务快速选择：按钮显示当前模型简称，
@@ -10,7 +8,7 @@ const DEFAULT_FALLBACK_MODEL = 'deepseek-v4-flash';
  */
 export function ModelPicker() {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
+  const [pos, setPos] = useState<MenuPos | null>(null);
   const btnRef = useRef<HTMLDivElement>(null);
   const provider = useSettings((s) => s.provider);
   const model = useSettings((s) => s.model);
@@ -24,11 +22,7 @@ export function ModelPicker() {
   const openMenu = () => {
     const rect = btnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    // 菜单右对齐按钮并 clamp 在视口内（同 Composer 指令菜单策略）
-    const MENU_W = 256;
-    const MARGIN = 8;
-    const left = Math.min(Math.max(rect.right - MENU_W, MARGIN), window.innerWidth - MENU_W - MARGIN);
-    setPos({ left: Math.round(left), bottom: Math.round(window.innerHeight - rect.top + 6) });
+    setPos(menuPosition(rect, 256, window.innerWidth, window.innerHeight));
     setOpen(true);
   };
 
@@ -37,7 +31,7 @@ export function ModelPicker() {
     setProvider(p);
     // 当前模型在新服务不可用 → 回退默认；菜单保持打开，展示新服务的模型列表
     const available = MODELS_BY_PROVIDER[p].filter((m) => m.enabled).map((m) => m.id);
-    if (!available.includes(model)) setModel(DEFAULT_FALLBACK_MODEL);
+    if (!available.includes(model)) setModel(DEFAULT_MODEL);
   };
 
   return (
@@ -55,84 +49,77 @@ export function ModelPicker() {
         </svg>
         {shortLabel}
       </button>
-      {open &&
-        pos &&
-        createPortal(
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <div
-              className="fixed z-50 w-64 rounded-xl border border-border bg-panel-2 p-1.5 shadow-xl"
-              style={{ left: pos.left, bottom: pos.bottom }}
+      {open && (
+        <Popover pos={pos} widthClass="w-64" onClose={() => setOpen(false)}>
+          <div className="px-2.5 pt-1.5 pb-1 text-[11px] text-text-dim/60">API 服务</div>
+          {PROVIDERS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              role="menuitem"
+              onClick={() => switchProvider(p.value)}
+              className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
+                provider === p.value ? 'text-accent' : 'text-text'
+              }`}
             >
-              <div className="px-2.5 pt-1.5 pb-1 text-[11px] text-text-dim/60">API 服务</div>
-              {PROVIDERS.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => switchProvider(p.value)}
-                  className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 ${
-                    provider === p.value ? 'text-accent' : 'text-text'
-                  }`}
-                >
-                  <span>
-                    <span className="text-xs font-medium">{p.label}</span>
-                    {p.hint && <span className="block text-[11px] text-text-dim break-all">{p.hint}</span>}
-                  </span>
-                  {provider === p.value && (
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M3 8.5l3.5 3.5L13 5"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
-              <div className="px-2.5 pt-1.5 pb-1 text-[11px] text-text-dim/60">模型</div>
-              {models.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  disabled={!m.enabled}
-                  onClick={() => {
-                    setModel(m.id);
-                    setOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 disabled:opacity-50 ${
-                    model === m.id ? 'text-accent' : 'text-text'
-                  }`}
-                >
-                  <span>
-                    <span className="text-xs font-medium">{m.label}</span>
-                    {m.disabledReason && (
-                      <span className="block text-[11px] text-text-dim">{m.disabledReason}</span>
-                    )}
-                  </span>
-                  {model === m.id && (
-                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M3 8.5l3.5 3.5L13 5"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                </button>
-              ))}
-              {provider === 'custom' && (
-                <div className="px-2.5 py-1.5 text-[11px] text-text-dim/60 leading-relaxed">
-                  代理端点在设置页「自建代理」中填写
-                </div>
+              <span>
+                <span className="text-xs font-medium">{p.label}</span>
+                {p.hint && <span className="block text-[11px] text-text-dim break-all">{p.hint}</span>}
+              </span>
+              {provider === p.value && (
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8.5l3.5 3.5L13 5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               )}
+            </button>
+          ))}
+          <div className="px-2.5 pt-1.5 pb-1 text-[11px] text-text-dim/60">模型</div>
+          {models.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="menuitem"
+              disabled={!m.enabled}
+              onClick={() => {
+                setModel(m.id);
+                setOpen(false);
+              }}
+              className={`w-full flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-panel-2/60 disabled:opacity-50 ${
+                model === m.id ? 'text-accent' : 'text-text'
+              }`}
+            >
+              <span>
+                <span className="text-xs font-medium">{m.label}</span>
+                {m.disabledReason && (
+                  <span className="block text-[11px] text-text-dim">{m.disabledReason}</span>
+                )}
+              </span>
+              {model === m.id && (
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M3 8.5l3.5 3.5L13 5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          ))}
+          {provider === 'custom' && (
+            <div className="px-2.5 py-1.5 text-[11px] text-text-dim/60 leading-relaxed">
+              代理端点在设置页「自建代理」中填写
             </div>
-          </>,
-          document.body,
-        )}
+          )}
+        </Popover>
+      )}
     </div>
   );
 }

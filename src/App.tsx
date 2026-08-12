@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useChat } from './store/chat';
 import { useKeyboardOffset } from './hooks/useKeyboardOffset';
+import { consumeUrlApiKey } from './utils/urlKey';
 import { useSettings } from './store/settings';
 import { ConversationDrawer } from './components/ConversationDrawer';
 import { MessageList } from './components/MessageList';
@@ -46,9 +47,9 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // URL ?apiKey=xxx：幂等应用 + 轻提示（main.tsx 已同步写入，此处保证提示展示）
+  // URL ?apiKey=xxx：幂等应用 + 轻提示（main.tsx 已同步写入并清理地址栏，此处保证提示展示）
   useEffect(() => {
-    const key = new URLSearchParams(window.location.search).get('apiKey')?.trim();
+    const key = consumeUrlApiKey();
     if (!key) return;
     setApiKey(key);
     setKeyNotice(true);
