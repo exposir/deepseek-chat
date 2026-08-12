@@ -1,4 +1,5 @@
 import { readSseStream, parseSseData } from './sse';
+import { PROVIDERS, type Provider } from '../store/settings';
 import type {
   ApiErrorBody,
   CreateResponseRequest,
@@ -11,7 +12,10 @@ import type {
   WebSearchCallItem,
 } from './types';
 
-export const API_BASE_URL = 'https://api.deepseek.com';
+/** 按 provider 解析 API 端点（DeepSeek 官方 / OpenCode Go），未知值回退官方 */
+export function apiBaseUrl(provider: Provider): string {
+  return PROVIDERS.find((p) => p.value === provider)?.baseUrl ?? 'https://api.deepseek.com';
+}
 
 /** 流式回调：store 层按需订阅 */
 export interface StreamCallbacks {
@@ -43,6 +47,7 @@ export class ApiError extends Error {
 
 export interface SendParams {
   apiKey: string;
+  baseUrl: string;
   model: string;
   input: ResponseItem[];
   systemPrompt?: string;
@@ -107,7 +112,7 @@ export async function createResponseStream(
   if (params.searchEnabled) body.tools = [{ type: 'web_search' }];
   body.reasoning = { effort: params.reasoningEffort };
 
-  const res = await fetch(`${API_BASE_URL}/responses`, {
+  const res = await fetch(`${params.baseUrl}/responses`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -173,6 +178,7 @@ export function extractText(item: MessageItem): string {
 
 export interface GenerateTitleParams {
   apiKey: string;
+  baseUrl: string;
   model: string;
   /** 最近几轮对话拼接（首轮传首条用户消息） */
   context: string;
@@ -193,7 +199,7 @@ export async function generateTitle(params: GenerateTitleParams): Promise<string
     ]
       .filter(Boolean)
       .join('\n\n');
-    const res = await fetch(`${API_BASE_URL}/responses`, {
+    const res = await fetch(`${params.baseUrl}/responses`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

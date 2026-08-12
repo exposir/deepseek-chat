@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MODELS, useSettings, type PromptTemplate, type Theme } from '../store/settings';
+import { MODELS_BY_PROVIDER, PROVIDERS, useSettings, type PromptTemplate, type Theme } from '../store/settings';
 import { EFFORTS } from './EffortPicker';
 
 const THEMES: { value: Theme; label: string; hint: string }[] = [
@@ -22,6 +22,16 @@ export function SettingsPage({
   const settings = useSettings();
   const [keyDraft, setKeyDraft] = useState(settings.apiKey);
   const [showKey, setShowKey] = useState(false);
+  const provider = PROVIDERS.find((p) => p.value === settings.provider) ?? PROVIDERS[0];
+  const models = MODELS_BY_PROVIDER[settings.provider];
+
+  const selectProvider = (value: (typeof PROVIDERS)[number]['value']) => {
+    if (value === settings.provider) return;
+    settings.setProvider(value);
+    // 当前模型在新 provider 不可用 → 回退默认模型
+    const available = MODELS_BY_PROVIDER[value].filter((m) => m.enabled).map((m) => m.id);
+    if (!available.includes(settings.model)) settings.setModel('deepseek-v4-flash');
+  };
 
   const saveKey = () => {
     settings.setApiKey(keyDraft);
@@ -104,7 +114,6 @@ export function SettingsPage({
                 </button>
               </div>
               <p className="text-xs text-text-dim leading-relaxed">
-                Key 仅保存在你的设备本地，只随请求发送至 api.deepseek.com，不经过任何第三方服务器。
                 没有 Key？前往{' '}
                 <a
                   href="https://platform.deepseek.com/api_keys"
@@ -114,7 +123,32 @@ export function SettingsPage({
                 >
                   DeepSeek 开放平台
                 </a>{' '}
-                创建（需充值余额）。
+                创建（需充值余额），或使用 OpenCode Go 订阅的 Key。
+              </p>
+            </section>
+
+            {/* API 服务 */}
+            <section className="space-y-2">
+              <h2 className="text-sm font-medium">API 服务</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {PROVIDERS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => selectProvider(p.value)}
+                    className={`rounded-xl border px-3 py-2.5 text-left ${
+                      settings.provider === p.value
+                        ? 'border-accent/60 bg-accent/10'
+                        : 'border-border bg-panel-2 hover:bg-panel-2/80'
+                    }`}
+                  >
+                    <div className="text-sm">{p.label}</div>
+                    <div className="text-[12px] text-text-dim mt-0.5 break-all">{p.hint}</div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-text-dim leading-relaxed">
+                Key 仅保存在你的设备本地，只随请求发送至 {provider.baseUrl}，不经过任何第三方服务器。
               </p>
             </section>
 
@@ -122,7 +156,7 @@ export function SettingsPage({
             <section className="space-y-2">
               <h2 className="text-sm font-medium">模型</h2>
               <div className="space-y-2">
-                {MODELS.map((m) => (
+                {models.map((m) => (
                   <button
                     key={m.id}
                     type="button"

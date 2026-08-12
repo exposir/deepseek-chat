@@ -6,7 +6,7 @@ import { MarkdownContent } from './MarkdownContent';
 import { ReasoningBlock } from './ReasoningBlock';
 import { SearchCallBadge } from './SearchCallBadge';
 import { formatTokens, formatCost } from '../utils/format';
-import { MODELS, useSettings } from '../store/settings';
+import { MODELS_BY_PROVIDER, useSettings } from '../store/settings';
 import { useChat } from '../store/chat';
 
 function reasoningText(item: ReasoningItem): string {
@@ -16,7 +16,8 @@ function reasoningText(item: ReasoningItem): string {
 /** 上下文占用行：input_tokens 即当前上下文长度（无状态全量回传），换算成进度与费用 */
 function ContextUsageLine({ usage }: { usage: Usage }) {
   const model = useSettings((s) => s.model);
-  const modelOpt = MODELS.find((m) => m.id === model);
+  const provider = useSettings((s) => s.provider);
+  const modelOpt = MODELS_BY_PROVIDER[provider].find((m) => m.id === model);
   const window = modelOpt?.contextWindow ?? 1_000_000;
   const used = usage.input_tokens ?? 0;
   const pct = Math.min(100, Math.round((used / window) * 100));

@@ -9,12 +9,37 @@ export interface ModelOption {
   disabledReason?: string;
   /** 模型上下文窗口（tokens），用于进度显示 */
   contextWindow?: number;
-  /** 计价（元/百万 tokens），用于费用估算 */
+  /** 计价（元/百万 tokens），用于费用估算；订阅制服务（OpenCode Go）不填则不显示费用 */
   pricing?: { input: number; cachedInput: number; output: number };
 }
 
-/** 模型常量表：pro 待官方 Responses API 支持后改 enabled 即可 */
-export const MODELS: ModelOption[] = [
+/** API 服务商：决定端点、可用模型与费用展示 */
+export type Provider = 'deepseek' | 'opencode-go';
+
+export interface ProviderOption {
+  value: Provider;
+  label: string;
+  hint: string;
+  baseUrl: string;
+}
+
+export const PROVIDERS: ProviderOption[] = [
+  {
+    value: 'deepseek',
+    label: 'DeepSeek 官方',
+    hint: 'api.deepseek.com',
+    baseUrl: 'https://api.deepseek.com',
+  },
+  {
+    value: 'opencode-go',
+    label: 'OpenCode Go',
+    hint: 'opencode.ai/zen/go/v1',
+    baseUrl: 'https://opencode.ai/zen/go/v1',
+  },
+];
+
+/** DeepSeek 官方：pro 待官方 Responses API 支持后改 enabled 即可 */
+const DEEPSEEK_MODELS: ModelOption[] = [
   {
     id: 'deepseek-v4-flash',
     label: 'DeepSeek V4 Flash',
@@ -31,6 +56,27 @@ export const MODELS: ModelOption[] = [
     pricing: { input: 3, cachedInput: 0.025, output: 6 },
   },
 ];
+
+/** OpenCode Go（订阅制）：pro 已可用；pricing 留空则设置页不显示费用估算 */
+const OPENCODE_GO_MODELS: ModelOption[] = [
+  {
+    id: 'deepseek-v4-flash',
+    label: 'DeepSeek V4 Flash',
+    enabled: true,
+    contextWindow: 1_000_000,
+  },
+  {
+    id: 'deepseek-v4-pro',
+    label: 'DeepSeek V4 Pro',
+    enabled: true,
+    contextWindow: 1_000_000,
+  },
+];
+
+export const MODELS_BY_PROVIDER: Record<Provider, ModelOption[]> = {
+  deepseek: DEEPSEEK_MODELS,
+  'opencode-go': OPENCODE_GO_MODELS,
+};
 
 export const DEFAULT_MODEL = 'deepseek-v4-flash';
 
@@ -56,6 +102,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
 
 interface SettingsState {
   apiKey: string;
+  provider: Provider;
   model: string;
   reasoningEffort: ReasoningEffort;
   searchEnabled: boolean;
@@ -64,6 +111,7 @@ interface SettingsState {
   promptTemplates: PromptTemplate[];
   defaultTemplateId: string | null;
   setApiKey: (key: string) => void;
+  setProvider: (provider: Provider) => void;
   setModel: (model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setSearchEnabled: (enabled: boolean) => void;
@@ -77,6 +125,7 @@ export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
       apiKey: '',
+      provider: 'deepseek',
       model: DEFAULT_MODEL,
       reasoningEffort: 'max',
       searchEnabled: true,
@@ -85,6 +134,7 @@ export const useSettings = create<SettingsState>()(
       promptTemplates: DEFAULT_TEMPLATES,
       defaultTemplateId: null,
       setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
+      setProvider: (provider) => set({ provider }),
       setModel: (model) => set({ model }),
       setReasoningEffort: (reasoningEffort) => set({ reasoningEffort }),
       setSearchEnabled: (searchEnabled) => set({ searchEnabled }),
@@ -96,11 +146,14 @@ export const useSettings = create<SettingsState>()(
     {
       name: 'ds-chat-settings',
       version: 1,
-      // v0 曾使用 medium 档位（非官方档位），迁移为默认 high
+      // v0 曾使用 medium 档位（非官方档位），迁移为默认 high；旧存档无 provider 字段 → 默认 deepseek
       migrate: (state) => {
         const s = state as Partial<SettingsState>;
         if (s.reasoningEffort && !['none', 'low', 'high', 'max'].includes(s.reasoningEffort)) {
           s.reasoningEffort = 'high';
+        }
+        if (!s.provider || !['deepseek', 'opencode-go'].includes(s.provider)) {
+          s.provider = 'deepseek';
         }
         return s as SettingsState;
       },

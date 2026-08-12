@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   ApiError,
+  apiBaseUrl,
   buildInputItems,
   createResponseStream,
   extractText,
@@ -247,6 +248,7 @@ export const useChat = create<ChatState>()((set, get) => ({
       await createResponseStream(
         {
           apiKey: settings.apiKey,
+          baseUrl: apiBaseUrl(settings.provider),
           model: settings.model,
           input,
           systemPrompt,
@@ -399,6 +401,7 @@ export const useChat = create<ChatState>()((set, get) => ({
               .slice(0, 1500);
       const title = await generateTitle({
         apiKey: settings.apiKey,
+        baseUrl: apiBaseUrl(settings.provider),
         model: settings.model,
         context,
         previousTitle: conv.title,
