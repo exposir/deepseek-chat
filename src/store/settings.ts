@@ -45,7 +45,7 @@ export const PROVIDERS: ProviderOption[] = [
   },
 ];
 
-/** DeepSeek 官方：pro 待官方 Responses API 支持后改 enabled 即可 */
+/** DeepSeek 官方：V4 Pro 已正式发布（DeepSeek-V4-Pro-0813），Responses API 与 web_search 均支持 */
 const DEEPSEEK_MODELS: ModelOption[] = [
   {
     id: 'deepseek-v4-flash',
@@ -57,8 +57,7 @@ const DEEPSEEK_MODELS: ModelOption[] = [
   {
     id: 'deepseek-v4-pro',
     label: 'DeepSeek V4 Pro',
-    enabled: false,
-    disabledReason: 'Responses API 支持后开放（官方预计 2026 年 8 月初）',
+    enabled: true,
     contextWindow: 1_000_000,
     pricing: { input: 3, cachedInput: 0.025, output: 6 },
   },
