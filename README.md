@@ -6,7 +6,10 @@
 
 ## 特性
 
-- **BYOK 纯前端**：填入自己的 DeepSeek API Key，浏览器直连 `api.deepseek.com`，零后端、无中间服务器
+- **BYOK 纯前端**：填入自己的 API Key，浏览器直连所选服务，零后端、无中间服务器
+  - **DeepSeek 官方**：直连 `api.deepseek.com`
+  - **OpenCode Go**：`opencode.ai` 端点未配置浏览器 CORS，需通过「自建代理」使用（模板见 `examples/opencode-go-proxy.js`，如 Cloudflare Worker）
+  - 各服务的 Key 独立保存，切换服务自动跟随
 - **流式输出**：基于 Responses API 的 SSE 流式渲染，Streamdown 处理未闭合 Markdown
 - **思维链**：可折叠展示模型推理过程，思考强度可调（none / low / high / max）
 - **联网搜索**：由 DeepSeek 服务端执行的 `web_search` 托管工具，带搜索状态提示
@@ -15,7 +18,7 @@
 
 ## 隐私
 
-API Key 仅保存在你的设备本地，只随请求发送至 `api.deepseek.com`。页面 CSP 将 `connect-src` 限制为该域名，从机制上杜绝密钥外发。
+API Key 仅保存在你的设备本地，只随请求发送至你选择的 API 服务端点（DeepSeek 官方 / 自建代理），不经过任何第三方服务器。自建代理由你自行部署，Key 从你的浏览器直达代理，再由代理转发至上游。
 
 ## 本地开发
 

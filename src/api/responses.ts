@@ -12,8 +12,9 @@ import type {
   WebSearchCallItem,
 } from './types';
 
-/** 按 provider 解析 API 端点（DeepSeek 官方 / OpenCode Go），未知值回退官方 */
-export function apiBaseUrl(provider: Provider): string {
+/** 按 provider 解析 API 端点（DeepSeek 官方 / OpenCode Go / 自建代理），未知值回退官方 */
+export function apiBaseUrl(provider: Provider, customBaseUrl?: string): string {
+  if (provider === 'custom') return customBaseUrl?.trim() || '';
   return PROVIDERS.find((p) => p.value === provider)?.baseUrl ?? 'https://api.deepseek.com';
 }
 

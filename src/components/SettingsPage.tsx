@@ -149,9 +149,25 @@ export function SettingsPage({
                   </button>
                 ))}
               </div>
+              {settings.provider === 'opencode-go' && (
+                <p className="text-xs text-amber-400 leading-relaxed">
+                  OpenCode Go 端点未配置浏览器 CORS，无法直连。请选择「自建代理」并部署转发
+                  Worker（模板见项目 examples/opencode-go-proxy.js）。
+                </p>
+              )}
+              {settings.provider === 'custom' && (
+                <input
+                  value={settings.customBaseUrl}
+                  onChange={(e) => settings.setCustomBaseUrl(e.target.value)}
+                  placeholder="https://你的代理地址/zen/go/v1"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  className={`${inputCls}`}
+                />
+              )}
               <p className="text-xs text-text-dim leading-relaxed">
                 每个服务保存各自的 Key，切换后自动跟随。Key 仅保存在你的设备本地，只随请求发送至{' '}
-                {provider.baseUrl}
+                {provider.baseUrl || settings.customBaseUrl || '你填写的代理端点'}
                 ，不经过任何第三方服务器。
               </p>
             </section>

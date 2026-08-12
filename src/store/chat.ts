@@ -248,7 +248,7 @@ export const useChat = create<ChatState>()((set, get) => ({
       await createResponseStream(
         {
           apiKey: settings.apiKeys[settings.provider],
-          baseUrl: apiBaseUrl(settings.provider),
+          baseUrl: apiBaseUrl(settings.provider, settings.customBaseUrl),
           model: settings.model,
           input,
           systemPrompt,
@@ -330,7 +330,13 @@ export const useChat = create<ChatState>()((set, get) => ({
       );
     } catch (err) {
       if ((err as Error).name !== 'AbortError' && !signal.aborted) {
-        failed = errorMessage(err);
+        // CORS/网络失败：OpenCode Go 未配置浏览器 CORS，给针对性提示
+        if (err instanceof TypeError && settings.provider === 'opencode-go') {
+          failed =
+            'OpenCode Go 不支持浏览器直连（未配置 CORS），请在设置页选择「自建代理」并填写转发端点';
+        } else {
+          failed = errorMessage(err);
+        }
       }
     }
 
@@ -401,7 +407,7 @@ export const useChat = create<ChatState>()((set, get) => ({
               .slice(0, 1500);
       const title = await generateTitle({
         apiKey: settings.apiKeys[settings.provider],
-        baseUrl: apiBaseUrl(settings.provider),
+        baseUrl: apiBaseUrl(settings.provider, settings.customBaseUrl),
         model: settings.model,
         context,
         previousTitle: conv.title,

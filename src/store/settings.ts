@@ -14,12 +14,13 @@ export interface ModelOption {
 }
 
 /** API 服务商：决定端点、可用模型与费用展示 */
-export type Provider = 'deepseek' | 'opencode-go';
+export type Provider = 'deepseek' | 'opencode-go' | 'custom';
 
 export interface ProviderOption {
   value: Provider;
   label: string;
   hint: string;
+  /** 浏览器直连端点；custom 为空，由用户在设置页填写代理地址 */
   baseUrl: string;
 }
 
@@ -33,8 +34,14 @@ export const PROVIDERS: ProviderOption[] = [
   {
     value: 'opencode-go',
     label: 'OpenCode Go',
-    hint: 'opencode.ai/zen/go/v1',
+    hint: 'opencode.ai/zen/go/v1（不支持浏览器直连，需自建代理）',
     baseUrl: 'https://opencode.ai/zen/go/v1',
+  },
+  {
+    value: 'custom',
+    label: '自建代理',
+    hint: 'Cloudflare Worker / 任意反向代理地址',
+    baseUrl: '',
   },
 ];
 
@@ -76,6 +83,8 @@ const OPENCODE_GO_MODELS: ModelOption[] = [
 export const MODELS_BY_PROVIDER: Record<Provider, ModelOption[]> = {
   deepseek: DEEPSEEK_MODELS,
   'opencode-go': OPENCODE_GO_MODELS,
+  // 自建代理：按 OpenCode Go 模型表（常见场景是转发 OpenCode Go）
+  custom: OPENCODE_GO_MODELS,
 };
 
 export const DEFAULT_MODEL = 'deepseek-v4-flash';
@@ -104,6 +113,8 @@ interface SettingsState {
   /** 各 API 服务的 Key 分开保存（切换服务自动跟随） */
   apiKeys: Record<Provider, string>;
   provider: Provider;
+  /** 自建代理的端点（仅 provider=custom 时使用） */
+  customBaseUrl: string;
   model: string;
   reasoningEffort: ReasoningEffort;
   searchEnabled: boolean;
@@ -114,6 +125,7 @@ interface SettingsState {
   /** 写入当前 provider 对应的 Key */
   setApiKey: (key: string) => void;
   setProvider: (provider: Provider) => void;
+  setCustomBaseUrl: (url: string) => void;
   setModel: (model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setSearchEnabled: (enabled: boolean) => void;
@@ -126,8 +138,9 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
-      apiKeys: { deepseek: '', 'opencode-go': '' },
+      apiKeys: { deepseek: '', 'opencode-go': '', custom: '' },
       provider: 'deepseek',
+      customBaseUrl: '',
       model: DEFAULT_MODEL,
       reasoningEffort: 'max',
       searchEnabled: true,
@@ -138,6 +151,7 @@ export const useSettings = create<SettingsState>()(
       setApiKey: (key) =>
         set((s) => ({ apiKeys: { ...s.apiKeys, [s.provider]: key.trim() } })),
       setProvider: (provider) => set({ provider }),
+      setCustomBaseUrl: (customBaseUrl) => set({ customBaseUrl: customBaseUrl.trim().replace(/\/$/, '') }),
       setModel: (model) => set({ model }),
       setReasoningEffort: (reasoningEffort) => set({ reasoningEffort }),
       setSearchEnabled: (searchEnabled) => set({ searchEnabled }),
@@ -154,16 +168,18 @@ export const useSettings = create<SettingsState>()(
       migrate: (state, version) => {
         const s = state as Partial<SettingsState> & { apiKey?: string };
         if (version < 2) {
-          s.apiKeys = { deepseek: s.apiKey ?? '', 'opencode-go': '' };
+          s.apiKeys = { deepseek: s.apiKey ?? '', 'opencode-go': '', custom: '' };
           delete s.apiKey;
         }
         if (!s.apiKeys || typeof s.apiKeys !== 'object') {
-          s.apiKeys = { deepseek: '', 'opencode-go': '' };
+          s.apiKeys = { deepseek: '', 'opencode-go': '', custom: '' };
         }
+        if (!s.apiKeys.custom) s.apiKeys.custom = '';
+        if (!s.customBaseUrl) s.customBaseUrl = '';
         if (s.reasoningEffort && !['none', 'low', 'high', 'max'].includes(s.reasoningEffort)) {
           s.reasoningEffort = 'high';
         }
-        if (!s.provider || !['deepseek', 'opencode-go'].includes(s.provider)) {
+        if (!s.provider || !['deepseek', 'opencode-go', 'custom'].includes(s.provider)) {
           s.provider = 'deepseek';
         }
         return s as SettingsState;
