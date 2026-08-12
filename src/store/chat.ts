@@ -323,15 +323,25 @@ export const useChat = create<ChatState>()((set, get) => ({
           },
           onReasoningDelta: (delta, itemId) => {
             if (get().activeConvId !== convId) return;
-            const key = targetKey(get().streamBlocks, 'reasoning', itemId);
-            if (!key) return;
+            let key = targetKey(get().streamBlocks, 'reasoning', itemId);
+            if (!key) {
+              // 上游跳过 output_item.added 直接发 delta（如 OpenCode Go pro）：动态建块
+              const block: StreamBlock = { key: nextBlockKey(), itemId, type: 'reasoning', text: '' };
+              set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
+              key = block.key;
+            }
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
             scheduleFlush(set);
           },
           onTextDelta: (delta, itemId) => {
             if (get().activeConvId !== convId) return;
-            const key = targetKey(get().streamBlocks, 'message', itemId);
-            if (!key) return;
+            let key = targetKey(get().streamBlocks, 'message', itemId);
+            if (!key) {
+              // 上游跳过 output_item.added 直接发 delta（如 OpenCode Go pro）：动态建块
+              const block: StreamBlock = { key: nextBlockKey(), itemId, type: 'message', text: '' };
+              set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
+              key = block.key;
+            }
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
             scheduleFlush(set);
           },
