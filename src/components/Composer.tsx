@@ -23,7 +23,14 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const openTpl = () => {
     const rect = tplBtnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setTplPos({ left: Math.round(rect.left), bottom: Math.round(window.innerHeight - rect.top + 6) });
+    // 菜单 192px 宽：右对齐按钮并 clamp 在视口内（按钮靠右时直接 left 定位会溢出屏幕）
+    const MENU_W = 192;
+    const MARGIN = 8;
+    const left = Math.min(
+      Math.max(rect.right - MENU_W, MARGIN),
+      window.innerWidth - MENU_W - MARGIN,
+    );
+    setTplPos({ left: Math.round(left), bottom: Math.round(window.innerHeight - rect.top + 6) });
     setTplOpen(true);
   };
 

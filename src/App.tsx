@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useChat } from './store/chat';
+import { useKeyboardOffset } from './hooks/useKeyboardOffset';
 import { useSettings } from './store/settings';
 import { ConversationDrawer } from './components/ConversationDrawer';
 import { MessageList } from './components/MessageList';
@@ -22,6 +23,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsLeaving, setSettingsLeaving] = useState(false);
   const [keyNotice, setKeyNotice] = useState(false);
+  // iOS 软键盘弹出时压缩 app-shell 高度，输入区随之浮到键盘上方（见 useKeyboardOffset）
+  const kbOffset = useKeyboardOffset();
 
   // 关闭设置：先播退出动画再卸载
   const closeSettings = () => {
@@ -75,8 +78,17 @@ export default function App() {
   const needKey = error === 'NO_KEY';
 
   return (
-    <div className="app-shell relative flex flex-col md:flex-row">
-      <ConversationDrawer onOpenSettings={() => setShowSettings(true)} />      <div className="relative flex-1 min-w-0 flex flex-col">
+    <div
+      className="app-shell relative flex flex-col md:flex-row"
+      style={kbOffset > 0 ? { height: `calc(100dvh - ${kbOffset}px)` } : undefined}
+    >
+      <ConversationDrawer
+        onOpenSettings={() => {
+          // 移动端：从抽屉进设置，返回后抽屉保持关闭
+          setDrawerOpen(false);
+          setShowSettings(true);
+        }}
+      />      <div className="relative flex-1 min-w-0 flex flex-col">
       <header className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 px-3 h-14 border-b border-border bg-panel/80 backdrop-blur-2xl">
         <button
           type="button"
