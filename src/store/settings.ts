@@ -11,6 +11,8 @@ export interface ModelOption {
   contextWindow?: number;
   /** 计价（元/百万 tokens），用于费用估算；订阅制服务（OpenCode Go）不填则不显示费用 */
   pricing?: { input: number; cachedInput: number; output: number };
+  /** 是否支持 web_search（OpenCode Go 的 V4 Pro 上游不支持，实测报错） */
+  searchSupported?: boolean;
 }
 
 /** API 服务商：决定端点、可用模型与费用展示 */
@@ -63,19 +65,21 @@ const DEEPSEEK_MODELS: ModelOption[] = [
   },
 ];
 
-/** OpenCode Go（订阅制）：pro 已可用；pricing 留空则设置页不显示费用估算 */
+/** OpenCode Go（订阅制）：pro 已可用但上游不支持 web_search（实测 tools 解析报错）；pricing 留空则设置页不显示费用估算 */
 const OPENCODE_GO_MODELS: ModelOption[] = [
   {
     id: 'deepseek-v4-flash',
     label: 'DeepSeek V4 Flash',
     enabled: true,
     contextWindow: 1_000_000,
+    searchSupported: true,
   },
   {
     id: 'deepseek-v4-pro',
     label: 'DeepSeek V4 Pro',
     enabled: true,
     contextWindow: 1_000_000,
+    searchSupported: false,
   },
 ];
 

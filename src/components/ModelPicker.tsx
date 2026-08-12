@@ -99,6 +99,9 @@ export function ModelPicker() {
                 {m.disabledReason && (
                   <span className="block text-[11px] text-text-dim">{m.disabledReason}</span>
                 )}
+                {m.searchSupported === false && (
+                  <span className="block text-[11px] text-text-dim/60">不支持联网搜索</span>
+                )}
               </span>
               {model === m.id && (
                 <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 16 16" fill="none">

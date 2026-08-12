@@ -22,7 +22,7 @@ import {
   type ConversationRecord,
   type ItemRecord,
 } from '../db';
-import { useSettings } from './settings';
+import { useSettings, MODELS_BY_PROVIDER } from './settings';
 import { truncateTitle } from '../utils/format';
 import { finalizeStreamBlocks } from './finalize';
 
@@ -236,6 +236,10 @@ export const useChat = create<ChatState>()((set, get) => ({
     const history = get().items.map((r) => r.item);
     const input = buildInputItems(history, trimmed);
 
+    // 当前模型不支持 web_search 时（如 OpenCode Go 的 V4 Pro）强制忽略搜索开关，避免上游报错
+    const modelOpt = MODELS_BY_PROVIDER[settings.provider].find((m) => m.id === settings.model);
+    const searchOn = settings.searchEnabled && modelOpt?.searchSupported !== false;
+
     // 默认指令：与系统提示词合并，每次发送自动带上
     const defaultTpl = settings.promptTemplates.find((t) => t.id === settings.defaultTemplateId);
     const systemPrompt = [settings.systemPrompt, defaultTpl?.text]
@@ -272,7 +276,7 @@ export const useChat = create<ChatState>()((set, get) => ({
           model: settings.model,
           input,
           systemPrompt,
-          searchEnabled: settings.searchEnabled,
+          searchEnabled: searchOn,
           reasoningEffort: settings.reasoningEffort,
         },
         {

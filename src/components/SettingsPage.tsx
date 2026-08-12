@@ -187,6 +187,9 @@ export function SettingsPage({
                       {!m.enabled && m.disabledReason && (
                         <div className="text-[12px] text-text-dim mt-0.5">{m.disabledReason}</div>
                       )}
+                      {m.searchSupported === false && (
+                        <div className="text-[12px] text-text-dim/60 mt-0.5">不支持联网搜索</div>
+                      )}
                     </div>
                     {settings.model === m.id && (
                       <svg className="w-4 h-4 text-accent" viewBox="0 0 16 16" fill="none">

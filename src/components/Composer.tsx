@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../store/chat';
-import { useSettings, type PromptTemplate } from '../store/settings';
+import { MODELS_BY_PROVIDER, useSettings, type PromptTemplate } from '../store/settings';
 import { EffortPicker } from './EffortPicker';
 import { ModelPicker } from './ModelPicker';
 import { Popover, menuPosition, type MenuPos } from './Popover';
@@ -15,6 +15,11 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
   const clearDraft = useChat((s) => s.clearDraft);
   const searchEnabled = useSettings((s) => s.searchEnabled);
   const setSearchEnabled = useSettings((s) => s.setSearchEnabled);
+  const provider = useSettings((s) => s.provider);
+  const model = useSettings((s) => s.model);
+  // 当前模型不支持 web_search（如 OpenCode Go 的 V4 Pro）：搜索开关禁用并提示
+  const searchSupported =
+    MODELS_BY_PROVIDER[provider].find((m) => m.id === model)?.searchSupported !== false;
   const apiKey = useSettings((s) => s.apiKeys[s.provider]);
   const promptTemplates = useSettings((s) => s.promptTemplates);
   const [tplOpen, setTplOpen] = useState(false);
@@ -81,11 +86,15 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
         <div className="flex items-center gap-2 pb-1.5 overflow-x-auto no-scrollbar">
           <button
             type="button"
+            disabled={!searchSupported}
+            title={searchSupported ? undefined : '当前模型不支持联网搜索'}
             onClick={() => setSearchEnabled(!searchEnabled)}
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 md:px-3 md:py-1.5 text-xs md:text-[13px] transition-colors ${
-              searchEnabled
-                ? 'border-accent/60 text-accent bg-accent/10 hover:bg-accent/15'
-                : 'border-border text-text-dim hover:bg-panel-2'
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 md:px-3 md:py-1.5 text-xs md:text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              !searchSupported
+                ? 'border-border text-text-dim'
+                : searchEnabled
+                  ? 'border-accent/60 text-accent bg-accent/10 hover:bg-accent/15'
+                  : 'border-border text-text-dim hover:bg-panel-2'
             }`}
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
@@ -96,7 +105,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
                 strokeWidth="1.3"
               />
             </svg>
-            联网搜索{searchEnabled ? '已开' : '已关'}
+            联网搜索{!searchSupported ? '不可用' : searchEnabled ? '已开' : '已关'}
           </button>
           <EffortPicker />
           <ModelPicker />
