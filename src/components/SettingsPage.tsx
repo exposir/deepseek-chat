@@ -184,6 +184,7 @@ export function SettingsPage({
                   >
                     <div>
                       <div className="text-sm">{m.label}</div>
+                      <div className="text-[12px] text-text-dim/60 mt-0.5">{m.id}</div>
                       {!m.enabled && m.disabledReason && (
                         <div className="text-[12px] text-text-dim mt-0.5">{m.disabledReason}</div>
                       )}

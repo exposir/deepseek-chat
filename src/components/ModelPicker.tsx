@@ -95,6 +95,7 @@ export function ModelPicker() {
             >
               <span>
                 <span className="text-xs font-medium">{m.label}</span>
+                <span className="block text-[11px] text-text-dim/60">{m.id}</span>
                 {m.disabledReason && (
                   <span className="block text-[11px] text-text-dim">{m.disabledReason}</span>
                 )}
