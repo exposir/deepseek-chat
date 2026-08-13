@@ -83,11 +83,29 @@ const OPENCODE_GO_MODELS: ModelOption[] = [
   },
 ];
 
+/** 自建代理：上游由用户掌控，不预设搜索支持限制 */
+const CUSTOM_MODELS: ModelOption[] = [
+  {
+    id: 'deepseek-v4-flash',
+    label: 'DeepSeek V4 Flash',
+    enabled: true,
+    contextWindow: 1_000_000,
+    searchSupported: true,
+  },
+  {
+    id: 'deepseek-v4-pro',
+    label: 'DeepSeek V4 Pro',
+    enabled: true,
+    contextWindow: 1_000_000,
+    searchSupported: true,
+  },
+];
+
 export const MODELS_BY_PROVIDER: Record<Provider, ModelOption[]> = {
   deepseek: DEEPSEEK_MODELS,
   // OpenCode（走自建代理）与自建代理：均按 OpenCode Go 模型表
   opencode: OPENCODE_GO_MODELS,
-  custom: OPENCODE_GO_MODELS,
+  custom: CUSTOM_MODELS,
 };
 
 export const DEFAULT_MODEL = 'deepseek-v4-flash';

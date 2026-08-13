@@ -200,7 +200,9 @@ export interface GenerateTitleParams {
 }
 
 /**
- * 异步生成会话标题：非流式 + 关闭思考（none）+ 极小输出上限，成本近零。
+ * 异步生成会话标题：非流式 + 关闭思考（none），成本近零。
+ * 注意：不传 max_output_tokens——OpenCode Go 的 pro 上游在该参数下会产出空 output
+ * （生成 token 但不回传内容），标题字数靠 instructions 约束 + 本地截断。
  * 失败返回 null，调用方保持截断标题兜底。
  */
 export async function generateTitle(params: GenerateTitleParams): Promise<string | null> {
@@ -226,7 +228,6 @@ export async function generateTitle(params: GenerateTitleParams): Promise<string
         input: [{ type: 'message', role: 'user', content }],
         stream: false,
         reasoning: { effort: 'none' },
-        max_output_tokens: 24,
       }),
       signal: withTimeout(params.signal ?? new AbortController().signal, 30_000),
     });
