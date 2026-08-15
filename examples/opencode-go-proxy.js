@@ -6,7 +6,9 @@
 //
 // 可选环境变量（Worker 设置 → 变量）：
 //   UPSTREAM_BASE = https://opencode.ai/zen/go/v1   （默认同上）
-//   ALLOWED_ORIGIN = *                               （默认放行所有，生产建议填你的站点域名）
+//   ALLOWED_ORIGIN = *  ← 默认放行所有源。⚠️ 任何网站都能借用该 Worker 转发请求到
+//                        OpenCode 上游（消耗你的订阅额度、可能触发上游风控封禁）。
+//                        生产环境务必改为你的站点域名，例如 https://exposir.github.io
 
 const UPSTREAM_BASE = 'https://opencode.ai/zen/go/v1';
 const ALLOWED_ORIGIN = '*';

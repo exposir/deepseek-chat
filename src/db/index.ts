@@ -10,6 +10,13 @@ export interface ConversationRecord {
   titleCustom?: boolean;
 }
 
+/** 本轮请求的模型/上下文窗口/计价快照：费用估算用当时模型，避免换模型后历史重算 */
+export interface UsageModelSnapshot {
+  model: string;
+  contextWindow?: number;
+  pricing?: { input: number; cachedInput: number; output: number };
+}
+
 /** 会话内单条 item：以 API 原始 item JSON 为准，UI 状态由 item 派生 */
 export interface ItemRecord {
   id?: number; // 自增主键
@@ -23,6 +30,7 @@ export interface ItemRecord {
     usage?: Usage;
     error?: string;
     interrupted?: boolean;
+    usageModel?: UsageModelSnapshot;
   };
 }
 
@@ -66,6 +74,11 @@ export async function deleteConversation(id: string): Promise<void> {
 
 export async function listItems(convId: string): Promise<ItemRecord[]> {
   return db.items.where('[convId+seq]').between([convId, 0], [convId, Infinity]).toArray();
+}
+
+/** 会话是否存在（流收尾落库前检查：会话可能在流式期间被删除，避免孤儿数据） */
+export async function conversationExists(id: string): Promise<boolean> {
+  return (await db.conversations.get(id)) !== undefined;
 }
 
 export async function appendItem(record: ItemRecord): Promise<void> {

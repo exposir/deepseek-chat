@@ -39,10 +39,25 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
 
   // —— 按会话草稿：切换会话时保存旧文本、载入新会话草稿 ——
   const activeConvId = useChat((s) => s.activeConvId);
+  const conversations = useChat((s) => s.conversations);
   const draftsRef = useRef<Record<string, string>>(loadDrafts());
   const textRef = useRef('');
   textRef.current = text;
   const prevConvRef = useRef(activeConvId);
+
+  // 清理已删除会话的孤儿草稿（避免 localStorage 长期膨胀）
+  useEffect(() => {
+    const ids = new Set(conversations.map((c) => c.id));
+    let changed = false;
+    for (const id of Object.keys(draftsRef.current)) {
+      if (id !== '' && !ids.has(id)) {
+        delete draftsRef.current[id];
+        changed = true;
+      }
+    }
+    if (changed) persistDrafts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversations]);
 
   useEffect(() => {
     const prev = prevConvRef.current;
@@ -174,7 +189,7 @@ export function Composer({ onNeedKey }: { onNeedKey: () => void }) {
               指令
             </button>
             {tplOpen && (
-              <Popover pos={tplPos} widthClass="w-48" onClose={() => setTplOpen(false)}>
+              <Popover pos={tplPos} width={192} onClose={() => setTplOpen(false)}>
                 {promptTemplates.map((t) => (
                   <button
                     key={t.id}

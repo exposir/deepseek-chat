@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 const MENU_MARGIN = 8;
@@ -19,8 +20,8 @@ export function menuPosition(rect: DOMRect, menuW: number, vw: number, vh: numbe
 
 interface PopoverProps {
   pos: MenuPos | null;
-  /** 菜单宽度类（w-44 / w-48 / w-64 ...） */
-  widthClass: string;
+  /** 菜单宽度（px）：与 menuPosition 的 menuW 同一真相，避免 CSS 类与数字漂移 */
+  width: number;
   onClose: () => void;
   children: ReactNode;
 }
@@ -30,15 +31,25 @@ interface PopoverProps {
  * 必须 portal 到 body：Composer 的 backdrop-blur 会截断 fixed 定位，
  * 且菜单留在 Composer（z-20 context）内会被 body 层 z-40 遮罩盖住导致点击失效。
  */
-export function Popover({ pos, widthClass, onClose, children }: PopoverProps) {
+export function Popover({ pos, width, onClose, children }: PopoverProps) {
+  // Escape 关闭（与 Dialog 行为一致）
+  useEffect(() => {
+    if (!pos) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [pos, onClose]);
+
   if (!pos) return null;
   return createPortal(
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
         role="menu"
-        className={`fixed z-50 ${widthClass} rounded-xl border border-border bg-panel-2 p-1.5 shadow-xl`}
-        style={{ left: pos.left, bottom: pos.bottom }}
+        className="fixed z-50 rounded-xl border border-border bg-panel-2 p-1.5 shadow-xl"
+        style={{ left: pos.left, bottom: pos.bottom, width }}
       >
         {children}
       </div>

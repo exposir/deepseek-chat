@@ -102,6 +102,54 @@ describe('finalizeStreamBlocks 流式收尾', () => {
     });
   });
 
+  it('usage 优先标记在最后一个 message 记录（web_search_call 之后有 message 时不标在 search 块）', () => {
+    const records = finalizeStreamBlocks({
+      convId: 'c1',
+      startSeq: 0,
+      createdAt: 1000,
+      blocks: [
+        {
+          key: 'w1',
+          itemId: 'witem',
+          type: 'web_search_call',
+          text: '',
+          searchStatus: 'completed',
+          action: { queries: ['x'] },
+        },
+        message('答复'),
+      ],
+      usage: { input_tokens: 10, output_tokens: 5 },
+      usageModel: { model: 'deepseek-v4-flash', contextWindow: 1_000_000, pricing: { input: 1, cachedInput: 0.02, output: 2 } },
+    });
+    expect(records).toHaveLength(2);
+    expect(records[0].meta).toBeUndefined();
+    expect(records[1].meta).toEqual({
+      usage: { input_tokens: 10, output_tokens: 5 },
+      usageModel: { model: 'deepseek-v4-flash', contextWindow: 1_000_000, pricing: { input: 1, cachedInput: 0.02, output: 2 } },
+    });
+  });
+
+  it('无 message 记录时回退标记在最后一个记录（usage 不丢）', () => {
+    const records = finalizeStreamBlocks({
+      convId: 'c1',
+      startSeq: 0,
+      createdAt: 1000,
+      blocks: [
+        {
+          key: 'w1',
+          itemId: 'witem',
+          type: 'web_search_call',
+          text: '',
+          searchStatus: 'completed',
+          action: { queries: ['x'] },
+        },
+      ],
+      usage: { input_tokens: 10, output_tokens: 5 },
+    });
+    expect(records).toHaveLength(1);
+    expect(records[0].meta?.usage).toEqual({ input_tokens: 10, output_tokens: 5 });
+  });
+
   it('空块列表返回空数组（未生成任何内容）', () => {
     expect(finalizeStreamBlocks({ convId: 'c1', startSeq: 5, createdAt: 1000, blocks: [] })).toEqual([]);
   });

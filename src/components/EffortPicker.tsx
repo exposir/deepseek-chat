@@ -48,7 +48,7 @@ export function EffortPicker() {
         思考 {current.label}
       </button>
       {open && (
-        <Popover pos={pos} widthClass="w-44" onClose={() => setOpen(false)}>
+        <Popover pos={pos} width={176} onClose={() => setOpen(false)}>
           {EFFORTS.map((e) => (
             <button
               key={e.value}

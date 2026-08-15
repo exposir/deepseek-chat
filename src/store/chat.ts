@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { flushSync } from 'react-dom';
 import {
   ApiError,
   apiBaseUrl,
@@ -11,6 +12,7 @@ import type { MessageItem, ResponseItem, Usage } from '../api/types';
 import {
   appendItem,
   bulkAddItems,
+  conversationExists,
   createConversation,
   deleteConversation,
   listConversations,
@@ -25,6 +27,11 @@ import {
 import { useSettings, MODELS_BY_PROVIDER } from './settings';
 import { truncateTitle } from '../utils/format';
 import { finalizeStreamBlocks } from './finalize';
+
+/** 会话级错误：判别联合，不再用魔法字符串哨兵 */
+export type ChatError =
+  | { kind: 'no-key' }
+  | { kind: 'message'; text: string };
 
 /** 流式过程中的临时输出块（完成后转为 ItemRecord 落库） */
 export interface StreamBlock {
@@ -44,7 +51,7 @@ interface ChatState {
   items: ItemRecord[];
   streamBlocks: StreamBlock[];
   isStreaming: boolean;
-  error: string | null;
+  error: ChatError | null;
   drawerOpen: boolean;
   /** 编辑消息回退后待载入输入框的文本（Composer 消费后清空） */
   draft: string | null;
@@ -80,16 +87,25 @@ const pendingDeltas = new Map<string, string>();
 let flushScheduled = false;
 let flushRafId = 0;
 
-/** 取消已排队的 rAF flush（收尾时改用同步合并，避免竞态） */
+/** 取消已排队的 rAF flush（收尾时改用同步合并，避免竞态）；与 scheduleFlush 的降级对应 */
 function cancelScheduledFlush() {
   if (flushRafId) {
-    cancelAnimationFrame(flushRafId);
+    if (typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(flushRafId);
+    } else {
+      clearTimeout(flushRafId);
+    }
     flushRafId = 0;
   }
   flushScheduled = false;
 }
 
-function scheduleFlush(set: (fn: (s: ChatState) => Partial<ChatState>) => void) {
+/**
+ * rAF 节流：同一帧内的多次调度只排一次，帧回调执行传入的 flush。
+ * flush 由 send() 闭包提供——把 pendingDeltas 合并进闭包 blocks，
+ * 而不是 store 的 streamBlocks（切走会话后 store 的 streamBlocks 会被清空，合并目标消失）。
+ */
+function scheduleFlush(flush: () => void) {
   if (flushScheduled) return;
   flushScheduled = true;
   const raf =
@@ -99,14 +115,7 @@ function scheduleFlush(set: (fn: (s: ChatState) => Partial<ChatState>) => void) 
   flushRafId = raf(() => {
     flushScheduled = false;
     flushRafId = 0;
-    if (pendingDeltas.size === 0) return;
-    const deltas = new Map(pendingDeltas);
-    pendingDeltas.clear();
-    set((s) => ({
-      streamBlocks: s.streamBlocks.map((b) =>
-        deltas.has(b.key) ? { ...b, text: b.text + deltas.get(b.key)! } : b,
-      ),
-    }));
+    flush();
   });
 }
 
@@ -151,6 +160,67 @@ function errorMessage(err: unknown): string {
 let blockSeq = 0;
 const nextBlockKey = () => `blk-${Date.now()}-${blockSeq++}`;
 
+interface TitleEvolveParams {
+  convId: string;
+  /** 流开始前的全部 item（不含本轮用户消息） */
+  history: ResponseItem[];
+  /** 本轮用户消息文本 */
+  userText: string;
+  /** 本轮流收尾后的新记录（assistant 回复等） */
+  replyRecords: ItemRecord[];
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  /** 写回前动态获取会话（存在性 + titleCustom 复验） */
+  findConv: () => ConversationRecord | undefined;
+  onTitle: (title: string) => Promise<void>;
+}
+
+/**
+ * 标题自动演进：首轮 + 每 5 轮，未手动改名时生成。
+ * 数据全部来自调用方闭包快照（history + userText + replyRecords），不读全局 store——
+ * 流结束后用户可能已切走/改名/删除会话，读 store 会拿到新会话的数据（串号）或覆盖手动改名。
+ * 写回前复验 titleCustom：生成期间用户手动改名则放弃。
+ */
+async function maybeEvolveTitle(p: TitleEvolveParams): Promise<void> {
+  const userCount =
+    p.history.filter(
+      (r) => r.type === 'message' && (r as MessageItem).role === 'user',
+    ).length + 1;
+  if (userCount !== 1 && userCount % 5 !== 0) return;
+  const conv = p.findConv();
+  if (!conv || conv.titleCustom) return;
+
+  const context =
+    userCount === 1
+      ? p.userText
+      : [...p.history, ...p.replyRecords.map((r) => r.item)]
+          .filter((r) => r.type === 'message')
+          .slice(-4)
+          .map((r) => {
+            const msg = r as MessageItem;
+            return msg.role === 'user' ? `用户：${extractText(msg)}` : `助手：${extractText(msg)}`;
+          })
+          .join('\n')
+          .slice(0, 1500);
+
+  titleAbort = new AbortController();
+  const title = await generateTitle({
+    apiKey: p.apiKey,
+    baseUrl: p.baseUrl,
+    model: p.model,
+    context,
+    previousTitle: conv.title,
+    signal: titleAbort?.signal,
+  });
+  titleAbort = null;
+  // 写回前复验：生成期间可能已手动改名（titleCustom）或会话被删除
+  const current = p.findConv();
+  if (title && current && !current.titleCustom) {
+    await p.onTitle(title);
+  }
+}
+
 export const useChat = create<ChatState>()((set, get) => ({
   conversations: [],
   activeConvId: null,
@@ -191,9 +261,12 @@ export const useChat = create<ChatState>()((set, get) => ({
         error: null,
         drawerOpen: isDesktopViewport() ? get().drawerOpen : false,
       });
-    // View Transitions：消息区交叉过渡（不支持时直接切换）
+    // View Transitions：消息区交叉过渡（不支持时直接切换）。
+    // flushSync 强制同步刷新 React DOM，保证快照捕获的是新状态（zustand set 是异步渲染的）
     if (typeof document !== 'undefined' && document.startViewTransition) {
-      document.startViewTransition(apply);
+      document.startViewTransition(() => {
+        flushSync(apply);
+      });
     } else {
       apply();
     }
@@ -213,6 +286,10 @@ export const useChat = create<ChatState>()((set, get) => ({
   },
 
   removeConversation: async (id) => {
+    // 删除正在流式/生成标题的会话：终止后台请求。
+    // 流收尾的存在性检查（conversationExists）兜底，不会把结果写回已删除会话产生孤儿数据。
+    if (get().activeConvId === id && get().isStreaming) abortController?.abort();
+    titleAbort?.abort();
     await deleteConversation(id);
     const conversations = get().conversations.filter((c) => c.id !== id);
     set({ conversations });
@@ -227,7 +304,11 @@ export const useChat = create<ChatState>()((set, get) => ({
     if (!trimmed || get().isStreaming) return;
     const settings = useSettings.getState();
     if (!settings.apiKeys[settings.provider]) {
-      set({ error: 'NO_KEY' });
+      set({ error: { kind: 'no-key' } });
+      return;
+    }
+    if (settings.provider === 'custom' && !settings.customBaseUrl) {
+      set({ error: { kind: 'message', text: '请先在设置页填写自建代理地址' } });
       return;
     }
     const convId = get().activeConvId;
@@ -273,6 +354,27 @@ export const useChat = create<ChatState>()((set, get) => ({
     let usage: Usage | undefined;
     let failed: string | null = null;
 
+    // 流式块由闭包数组累积，store 的 streamBlocks 仅作 UI 镜像——
+    // 切走会话时 selectConversation 会清空 store 的 streamBlocks，若收尾/flush 从 store 读会丢内容。
+    const blocks: StreamBlock[] = [];
+    const syncBlocks = () => {
+      if (get().activeConvId === convId) set({ streamBlocks: [...blocks] });
+    };
+    /** 把缓冲的 delta 合并进闭包 blocks（帧回调执行；不依赖 store 状态） */
+    const flushPending = () => {
+      if (pendingDeltas.size === 0) return;
+      const deltas = new Map(pendingDeltas);
+      pendingDeltas.clear();
+      let changed = false;
+      for (const b of blocks) {
+        if (deltas.has(b.key)) {
+          b.text += deltas.get(b.key)!;
+          changed = true;
+        }
+      }
+      if (changed) syncBlocks();
+    };
+
     try {
       await createResponseStream(
         {
@@ -300,65 +402,65 @@ export const useChat = create<ChatState>()((set, get) => ({
                   ? (item.action as Record<string, unknown> | undefined)
                   : undefined,
             };
-            set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
+            blocks.push(block);
+            syncBlocks();
           },
           onItemDone: (item) => {
             if (get().activeConvId !== convId) return;
             const itemId = item.type === 'function_call_output' ? undefined : item.id;
-            set((s) => ({
-              streamBlocks: s.streamBlocks.map((b) => {
-                if (itemId && b.itemId === itemId) {
-                  return {
-                    ...b,
-                    finalItem: item,
-                    action:
-                      item.type === 'web_search_call'
-                        ? ((item.action as Record<string, unknown> | undefined) ?? b.action)
-                        : b.action,
-                  };
-                }
-                return b;
-              }),
-            }));
+            const idx = itemId ? blocks.findIndex((b) => b.itemId === itemId) : -1;
+            if (idx >= 0) {
+              blocks[idx] = {
+                ...blocks[idx],
+                finalItem: item,
+                action:
+                  item.type === 'web_search_call'
+                    ? ((item.action as Record<string, unknown> | undefined) ?? blocks[idx].action)
+                    : blocks[idx].action,
+              };
+              syncBlocks();
+            }
           },
           onReasoningDelta: (delta, itemId) => {
             if (get().activeConvId !== convId) return;
-            let key = targetKey(get().streamBlocks, 'reasoning', itemId);
+            let key = targetKey(blocks, 'reasoning', itemId);
             if (!key) {
               // 上游跳过 output_item.added 直接发 delta（如 OpenCode Go pro）：动态建块
               const block: StreamBlock = { key: nextBlockKey(), itemId, type: 'reasoning', text: '' };
-              set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
+              blocks.push(block);
+              syncBlocks();
               key = block.key;
             }
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
-            scheduleFlush(set);
+            scheduleFlush(flushPending);
           },
           onTextDelta: (delta, itemId) => {
             if (get().activeConvId !== convId) return;
-            let key = targetKey(get().streamBlocks, 'message', itemId);
+            let key = targetKey(blocks, 'message', itemId);
             if (!key) {
               // 上游跳过 output_item.added 直接发 delta（如 OpenCode Go pro）：动态建块
               const block: StreamBlock = { key: nextBlockKey(), itemId, type: 'message', text: '' };
-              set((s) => ({ streamBlocks: [...s.streamBlocks, block] }));
+              blocks.push(block);
+              syncBlocks();
               key = block.key;
             }
             pendingDeltas.set(key, (pendingDeltas.get(key) ?? '') + delta);
-            scheduleFlush(set);
+            scheduleFlush(flushPending);
           },
           onWebSearchStatus: (status, itemId, item) => {
             if (get().activeConvId !== convId) return;
-            set((s) => ({
-              streamBlocks: s.streamBlocks.map((b) =>
+            let changed = false;
+            for (const b of blocks) {
+              if (
                 (itemId && b.itemId === itemId) ||
                 (!itemId && b.type === 'web_search_call' && b.searchStatus !== 'completed')
-                  ? {
-                      ...b,
-                      searchStatus: status,
-                      action: (item?.action as Record<string, unknown> | undefined) ?? b.action,
-                    }
-                  : b,
-              ),
-            }));
+              ) {
+                b.searchStatus = status;
+                if (item?.action) b.action = item.action as Record<string, unknown>;
+                changed = true;
+              }
+            }
+            if (changed) syncBlocks();
           },
           onCompleted: (_resp, u) => {
             usage = u;
@@ -378,11 +480,12 @@ export const useChat = create<ChatState>()((set, get) => ({
       }
     }
 
-    // 收尾：把流式块转为持久化 item（无论正常/停止/失败，保留已生成内容）
+    // 收尾：把流式块转为持久化 item（无论正常/停止/失败，保留已生成内容）。
+    // 用闭包 blocks（切走后 store 的 streamBlocks 已被清空，读 store 会丢内容）。
     cancelScheduledFlush();
     const remaining = new Map(pendingDeltas);
     pendingDeltas.clear();
-    const blocks = get().streamBlocks.map((b) =>
+    const finalBlocks = blocks.map((b) =>
       remaining.has(b.key) ? { ...b, text: b.text + remaining.get(b.key)! } : b,
     );
     const interrupted = signal.aborted;
@@ -390,15 +493,23 @@ export const useChat = create<ChatState>()((set, get) => ({
     const newRecords = finalizeStreamBlocks({
       convId,
       startSeq,
-      blocks,
+      blocks: finalBlocks,
       createdAt: Date.now(),
       usage,
       interrupted,
       failed,
+      usageModel: {
+        model: settings.model,
+        contextWindow: modelOpt?.contextWindow,
+        pricing: modelOpt?.pricing,
+      },
     });
-    // 落库始终写旧会话（convId 闭包）；UI 仅在仍停留该会话时更新，避免污染新会话
-    await bulkAddItems(newRecords);
-    await touchConversation(convId);
+    // 落库始终写旧会话（convId 闭包）；UI 仅在仍停留该会话时更新，避免污染新会话。
+    // 会话可能已被删除（删除不等流结束）：存在性检查，避免孤儿数据。
+    if (await conversationExists(convId)) {
+      await bulkAddItems(newRecords);
+      await touchConversation(convId);
+    }
     abortController = null;
     const stillActive = get().activeConvId === convId;
     if (stillActive) {
@@ -406,47 +517,32 @@ export const useChat = create<ChatState>()((set, get) => ({
         items: [...s.items, ...newRecords],
         streamBlocks: [],
         isStreaming: false,
-        error: failed,
+        error: failed ? { kind: 'message', text: failed } : null,
       }));
     } else {
       // 已切走：释放全局流式锁即可（新会话的 items/streamBlocks 保持其自身状态）
       set({ isStreaming: false });
     }
 
-    // 标题自动演进：首轮 + 每 5 轮，未手动改名时，用旧标题 + 最近 2 轮对话生成
-    const userCount = get().items.filter(
-      (r) => r.item.type === 'message' && (r.item as MessageItem).role === 'user',
-    ).length;
-    const conv = get().conversations.find((c) => c.id === convId);
-    if (settings.apiKeys[settings.provider] && conv && !conv.titleCustom && (userCount === 1 || userCount % 5 === 0)) {
-      titleAbort = new AbortController();
-      const context =
-        userCount === 1
-          ? trimmed
-          : get()
-              .items.filter((r) => r.item.type === 'message')
-              .slice(-4)
-              .map((r) => {
-                const msg = r.item as MessageItem;
-                return msg.role === 'user' ? `用户：${extractText(msg)}` : `助手：${extractText(msg)}`;
-              })
-              .join('\n')
-              .slice(0, 1500);
-      const title = await generateTitle({
+    // 标题自动演进：数据用闭包快照（history + userRecord + newRecords），
+    // 流结束后用户可能已切走/改名/删除，读 store 会串号或覆盖。
+    if (settings.apiKeys[settings.provider]) {
+      await maybeEvolveTitle({
+        convId,
+        history,
+        userText: trimmed,
+        replyRecords: newRecords,
         apiKey: settings.apiKeys[settings.provider],
         baseUrl: apiBaseUrl(settings.provider, settings.customBaseUrl),
         model: settings.model,
-        context,
-        previousTitle: conv.title,
-        signal: titleAbort?.signal,
+        findConv: () => get().conversations.find((c) => c.id === convId),
+        onTitle: async (title) => {
+          await touchConversation(convId, title);
+          set((s) => ({
+            conversations: s.conversations.map((c) => (c.id === convId ? { ...c, title } : c)),
+          }));
+        },
       });
-      if (title && get().conversations.some((c) => c.id === convId)) {
-        await touchConversation(convId, title);
-        set((s) => ({
-          conversations: s.conversations.map((c) => (c.id === convId ? { ...c, title } : c)),
-        }));
-      }
-      titleAbort = null;
     }
   },
 
@@ -479,6 +575,8 @@ export const useChat = create<ChatState>()((set, get) => ({
   renameConversation: async (convId, title) => {
     const t = title.trim();
     if (!t) return;
+    // 手动改名：取消挂起的自动标题生成（写回前还有 titleCustom 复验兜底）
+    titleAbort?.abort();
     await updateConversation(convId, { title: t, titleCustom: true, updatedAt: Date.now() });
     set((s) => ({
       conversations: s.conversations.map((c) =>

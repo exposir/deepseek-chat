@@ -49,7 +49,7 @@ export function ModelPicker() {
         {providerLabel}
       </button>
       {open && (
-        <Popover pos={pos} widthClass="w-64" onClose={() => setOpen(false)}>
+        <Popover pos={pos} width={256} onClose={() => setOpen(false)}>
           <div className="px-2.5 pt-1.5 pb-1 text-[11px] text-text-dim/60">API 服务</div>
           {PROVIDERS.map((p) => (
             <button

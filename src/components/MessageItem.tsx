@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import type { ItemRecord } from '../db';
+import type { ItemRecord, UsageModelSnapshot } from '../db';
 import type { MessageItem as ApiMessageItem, ReasoningItem, Usage } from '../api/types';
 import { extractText } from '../api/responses';
 import { MarkdownContent } from './MarkdownContent';
@@ -13,11 +13,20 @@ function reasoningText(item: ReasoningItem): string {
   return (item.content ?? []).map((c) => c.text).join('');
 }
 
-/** 上下文占用行：input_tokens 即当前上下文长度（无状态全量回传），换算成进度与费用 */
-function ContextUsageLine({ usage }: { usage: Usage }) {
+/**
+ * 上下文占用行：input_tokens 即当前上下文长度（无状态全量回传），换算成进度与费用。
+ * 优先用该轮请求时的模型/计价快照（meta.usageModel），避免换模型后历史消息按新模型重算。
+ */
+function ContextUsageLine({
+  usage,
+  usageModel,
+}: {
+  usage: Usage;
+  usageModel?: UsageModelSnapshot;
+}) {
   const model = useSettings((s) => s.model);
   const provider = useSettings((s) => s.provider);
-  const modelOpt = MODELS_BY_PROVIDER[provider].find((m) => m.id === model);
+  const modelOpt = usageModel ?? MODELS_BY_PROVIDER[provider].find((m) => m.id === model);
   const window = modelOpt?.contextWindow ?? 1_000_000;
   const used = usage.input_tokens ?? 0;
   const pct = Math.min(100, Math.round((used / window) * 100));
@@ -185,7 +194,7 @@ export const MessageItemView = memo(function MessageItemView({
         )}
         <div className="flex items-center justify-between gap-2">
           {meta?.usage ? (
-            <ContextUsageLine usage={meta.usage} />
+            <ContextUsageLine usage={meta.usage} usageModel={meta.usageModel} />
           ) : (
             <span />
           )}

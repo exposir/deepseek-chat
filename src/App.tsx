@@ -82,7 +82,7 @@ export default function App() {
   }, [theme]);
 
   const activeTitle = conversations.find((c) => c.id === activeConvId)?.title ?? 'DeepSeek Chat';
-  const needKey = error === 'NO_KEY';
+  const needKey = error?.kind === 'no-key';
 
   return (
     <div
@@ -131,7 +131,7 @@ export default function App() {
       {error && (
         <div className="absolute inset-x-0 z-10 flex items-center gap-2 px-4 py-2 bg-red-500/10 border-b border-red-500/30 text-sm text-red-400 backdrop-blur-xl" style={{ top: 'var(--header-h)' }}>
           <span className="flex-1">
-            {needKey ? '请先在设置页填写 DeepSeek API Key' : error}
+            {needKey ? '请先在设置页填写 DeepSeek API Key' : error?.kind === 'message' ? error.text : ''}
           </span>
           {needKey && (
             <button

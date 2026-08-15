@@ -1,5 +1,5 @@
 import type { ResponseItem, Usage } from '../api/types';
-import type { ItemRecord } from '../db';
+import type { ItemRecord, UsageModelSnapshot } from '../db';
 import type { StreamBlock } from './chat';
 
 export interface FinalizeParams {
@@ -12,6 +12,8 @@ export interface FinalizeParams {
   usage?: Usage;
   interrupted?: boolean;
   failed?: string | null;
+  /** 本轮请求的模型/计价快照（费用估算用，避免换模型后历史重算） */
+  usageModel?: UsageModelSnapshot;
 }
 
 /**
@@ -19,7 +21,8 @@ export interface FinalizeParams {
  * - 有 finalItem 的块原样落库（服务端完整 item）
  * - reasoning / message 只保留非空文本（构造明文 item）
  * - 未完成的 web_search_call 保留展示（回传时由 buildInputItems 过滤）
- * - usage / interrupted / error 只标记在最后一个实际落库的记录上
+ * - usage / interrupted / error 标记在最后一个 message 上（UI 只在 message 分支渲染，
+ *   避免标在 web_search_call 等块上丢失）；无 message 时回退最后一个实际落库记录
  */
 export function finalizeStreamBlocks(p: FinalizeParams): ItemRecord[] {
   const records: ItemRecord[] = [];
@@ -48,12 +51,14 @@ export function finalizeStreamBlocks(p: FinalizeParams): ItemRecord[] {
     }
   }
 
-  const last = records[records.length - 1];
-  if (last && (p.usage || p.interrupted || p.failed)) {
-    last.meta = {
+  const metaTarget =
+    [...records].reverse().find((r) => r.item.type === 'message') ?? records[records.length - 1];
+  if (metaTarget && (p.usage || p.interrupted || p.failed || p.usageModel)) {
+    metaTarget.meta = {
       usage: p.usage,
       interrupted: p.interrupted || undefined,
       error: p.failed ?? undefined,
+      usageModel: p.usageModel,
     };
   }
   return records;
